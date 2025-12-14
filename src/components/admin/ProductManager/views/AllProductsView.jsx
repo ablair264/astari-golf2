@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, Image as ImageIcon, Archive, Copy } from 'lucide-react'
-import { getAllProducts, updateProduct, deleteProduct } from '@/services/products'
+import { getAllProducts, updateProduct, deleteProduct, createProduct } from '@/services/products'
 import { getSignedUploadUrl, uploadFileToSignedUrl } from '@/services/uploads'
 import { getAllBrands } from '@/services/brands'
 import { ProductFormModal } from './Modals/ProductFormModal'
@@ -89,9 +89,7 @@ export function AllProductsView() {
       delete copy.id
       copy.slug = `${p.slug || p.name}` + '-' + Math.floor(Math.random() * 100000)
       copy.name = `${p.name} (Copy)`
-      await updateProduct(p.id, { ...p }) // keep original
-      // create copy
-      await fetch('/api/products', { method: 'POST', body: JSON.stringify(copy) }).catch(() => {})
+      await createProduct(copy)
     }
     setSelected([])
     await load()
