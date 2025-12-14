@@ -170,20 +170,29 @@ export function AllProductsView() {
                 {p.style_no && <span className="text-white/40">Style {p.style_no}</span>}
               </div>
               <h3 className="text-lg font-semibold text-white">{p.name}</h3>
-            <div className="flex items-center gap-2 text-sm text-white/70">
-              <span>{p.category_name}</span>
-              {p.colour_name && (
-                <span className="flex items-center gap-1 text-xs text-white/60">
-                  <span className="inline-flex h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: p.colour_hex || '#e5e7eb' }} />
-                  <span className="capitalize">{p.colour_name}</span>
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-white font-semibold">
-              £{parseFloat(p.price_with_margin || p.price).toFixed(2)}
-              {p.price_min && p.price_max && p.price_max !== p.price_min && (
-                <span className="text-xs text-white/50">Range up to £{parseFloat(p.price_max).toFixed(2)}</span>
-              )}
+              <div className="flex items-center gap-2 text-sm text-white/70">
+                <span>{p.category_name}</span>
+                {p.colour_name && (
+                  <span className="flex items-center gap-1 text-xs text-white/60">
+                    <span className="inline-flex h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: p.colour_hex || '#e5e7eb' }} />
+                    <span className="capitalize">{p.colour_name}</span>
+                  </span>
+                )}
+              </div>
+            <div className="flex flex-col gap-1 text-sm text-white">
+              <div className="flex items-center gap-2 font-semibold">
+                <span className="text-white/70 text-xs uppercase tracking-[0.12em]">With margin</span>
+                <span>£{parseFloat(p.price_with_margin || p.price).toFixed(2)}</span>
+                {p.price_min && p.price_max && p.price_max !== p.price_min && (
+                  <span className="text-xs text-white/50">to £{parseFloat(p.price_max).toFixed(2)}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-white/70 text-xs">
+                <span>Base £{parseFloat(p.price).toFixed(2)}</span>
+                {p.margin_applied !== undefined && (
+                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-emerald-200">+{p.margin_applied}%</span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2 text-xs text-white/60">
               <span>{p.stock_quantity || 0} in stock</span>

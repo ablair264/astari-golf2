@@ -41,8 +41,12 @@ export function VariantsView() {
                   {variant.sku && <span className="text-white/40">SKU {variant.sku}</span>}
                 </div>
               )}
-              <div className="text-sm text-white/70">
-                £{parseFloat(variant.price_with_margin || variant.price).toFixed(2)}
+              <div className="flex flex-col gap-1 text-sm text-white/80">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/60 uppercase">With margin</span>
+                  <span>£{parseFloat(variant.price_with_margin || variant.price).toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-white/60">Base £{parseFloat(variant.price).toFixed(2)}{variant.margin_applied ? ` · +${variant.margin_applied}%` : ''}</div>
               </div>
             </div>
           </div>
