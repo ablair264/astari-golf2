@@ -11,6 +11,7 @@ export function AllProductsView() {
   const [uploadingId, setUploadingId] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
+  const [selected, setSelected] = useState([])
 
   useEffect(() => {
     load()
@@ -54,6 +55,20 @@ export function AllProductsView() {
     await load()
   }
 
+  const toggleSelect = (id) => {
+    setSelected((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const bulkDelete = async () => {
+    if (selected.length === 0) return
+    if (!confirm(`Delete ${selected.length} products?`)) return
+    for (const id of selected) {
+      await deleteProduct(id)
+    }
+    setSelected([])
+    await load()
+  }
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -69,12 +84,25 @@ export function AllProductsView() {
         </button>
       </div>
 
+      <div className="flex items-center justify-between text-white/70 text-sm">
+        <div>{selected.length} selected</div>
+        <div className="flex gap-2">
+          <button
+            onClick={bulkDelete}
+            className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-200 text-sm"
+            disabled={selected.length === 0}
+          >
+            Delete selected
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {products.map((p) => (
-        <div key={p.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex gap-4">
-          <div className="w-28 h-28 rounded-lg overflow-hidden bg-black/10 border border-white/10 flex-shrink-0 relative">
-            {p.image_url ? (
-              <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+        {products.map((p) => (
+          <div key={p.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex gap-4">
+            <div className="w-28 h-28 rounded-lg overflow-hidden bg-black/10 border border-white/10 flex-shrink-0 relative">
+              {p.image_url ? (
+                <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-white/40">
                 <ImageIcon className="w-6 h-6" />
@@ -88,12 +116,13 @@ export function AllProductsView() {
               {uploadingId === p.id ? 'Uploading...' : 'Upload'}
             </button>
           </div>
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2 text-xs text-white/60 uppercase tracking-[0.12em]">
-              <span>{p.brand_name}</span>
-              {p.style_no && <span className="text-white/40">Style {p.style_no}</span>}
-            </div>
-            <h3 className="text-lg font-semibold text-white">{p.name}</h3>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2 text-xs text-white/60 uppercase tracking-[0.12em]">
+                <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} className="accent-emerald-500" />
+                <span>{p.brand_name}</span>
+                {p.style_no && <span className="text-white/40">Style {p.style_no}</span>}
+              </div>
+              <h3 className="text-lg font-semibold text-white">{p.name}</h3>
             <div className="flex items-center gap-2 text-sm text-white/70">
               <span>{p.category_name}</span>
               {p.colour_name && (
@@ -104,7 +133,7 @@ export function AllProductsView() {
               )}
             </div>
             <div className="flex items-center gap-2 text-white font-semibold">
-              £{parseFloat(p.price).toFixed(2)}
+              £{parseFloat(p.price_with_margin || p.price).toFixed(2)}
               {p.price_min && p.price_max && p.price_max !== p.price_min && (
                 <span className="text-xs text-white/50">Range up to £{parseFloat(p.price_max).toFixed(2)}</span>
               )}
