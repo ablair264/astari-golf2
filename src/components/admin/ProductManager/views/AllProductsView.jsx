@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Image as ImageIcon, Archive } from 'lucide-react'
+import { Plus, Pencil, Trash2, Image as ImageIcon, Archive, Copy } from 'lucide-react'
 import { getAllProducts, updateProduct, deleteProduct } from '@/services/products'
 import { getSignedUploadUrl, uploadFileToSignedUrl } from '@/services/uploads'
 import { getAllBrands } from '@/services/brands'
@@ -81,6 +81,22 @@ export function AllProductsView() {
     await load()
   }
 
+  const bulkDuplicate = async () => {
+    if (selected.length === 0) return
+    const items = products.filter((p) => selected.includes(p.id))
+    for (const p of items) {
+      const copy = { ...p }
+      delete copy.id
+      copy.slug = `${p.slug || p.name}` + '-' + Math.floor(Math.random() * 100000)
+      copy.name = `${p.name} (Copy)`
+      await updateProduct(p.id, { ...p }) // keep original
+      // create copy
+      await fetch('/api/products', { method: 'POST', body: JSON.stringify(copy) }).catch(() => {})
+    }
+    setSelected([])
+    await load()
+  }
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -112,6 +128,13 @@ export function AllProductsView() {
             disabled={selected.length === 0}
           >
             Archive selected
+          </button>
+          <button
+            onClick={bulkDuplicate}
+            className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm"
+            disabled={selected.length === 0}
+          >
+            Duplicate selected
           </button>
           <button
             onClick={() => setBulkModalOpen(true)}
@@ -201,6 +224,7 @@ export function AllProductsView() {
         onClose={() => setBulkModalOpen(false)}
         onDelete={bulkDelete}
         onArchive={bulkArchive}
+        onDuplicate={bulkDuplicate}
         count={selected.length}
       />
     </div>

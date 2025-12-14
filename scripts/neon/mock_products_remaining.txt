@@ -1,2 +1,0 @@
-Reminder: remaining mock product image URLs still point to /products/...; swap to R2 base:
-https://pub-4c9f6b7302be48af87f843f23bad5c20.r2.dev/{brand}/product-images/{brand}/{file}
