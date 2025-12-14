@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Image as ImageIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Image as ImageIcon, Archive } from 'lucide-react'
 import { getAllProducts, updateProduct, deleteProduct } from '@/services/products'
 import { getSignedUploadUrl, uploadFileToSignedUrl } from '@/services/uploads'
 import { getAllBrands } from '@/services/brands'
 import { ProductFormModal } from './Modals/ProductFormModal'
+import { BulkActionsModal } from './Modals/BulkActionsModal'
 
 export function AllProductsView() {
   const [products, setProducts] = useState([])
@@ -12,6 +13,7 @@ export function AllProductsView() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [selected, setSelected] = useState([])
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
 
   useEffect(() => {
     load()
@@ -69,6 +71,16 @@ export function AllProductsView() {
     await load()
   }
 
+  const bulkArchive = async () => {
+    if (selected.length === 0) return
+    const updates = products
+      .filter((p) => selected.includes(p.id))
+      .map((p) => updateProduct(p.id, { ...p, is_active: false }))
+    await Promise.all(updates)
+    setSelected([])
+    await load()
+  }
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -93,6 +105,20 @@ export function AllProductsView() {
             disabled={selected.length === 0}
           >
             Delete selected
+          </button>
+          <button
+            onClick={bulkArchive}
+            className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm"
+            disabled={selected.length === 0}
+          >
+            Archive selected
+          </button>
+          <button
+            onClick={() => setBulkModalOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-white/5 text-white text-sm"
+            disabled={selected.length === 0}
+          >
+            More actions
           </button>
         </div>
       </div>
@@ -169,6 +195,13 @@ export function AllProductsView() {
         product={editingProduct}
         brands={brands}
         onSaved={load}
+      />
+      <BulkActionsModal
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        onDelete={bulkDelete}
+        onArchive={bulkArchive}
+        count={selected.length}
       />
     </div>
   )
