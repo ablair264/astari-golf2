@@ -7,6 +7,7 @@ export function ProductTypesView() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [selected, setSelected] = useState([])
 
   useEffect(() => {
     load()
@@ -17,6 +18,7 @@ export function ProductTypesView() {
     try {
       const data = await getCategories()
       setCategories(data)
+      setSelected([])
     } catch (err) {
       console.error('Failed to load categories', err)
     } finally {
@@ -51,6 +53,19 @@ export function ProductTypesView() {
     }
   }
 
+  const toggle = (id) => {
+    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+  }
+
+  const bulkDelete = async () => {
+    if (selected.length === 0) return
+    if (!confirm(`Delete ${selected.length} categories?`)) return
+    for (const id of selected) {
+      await deleteCategory(id)
+    }
+    await load()
+  }
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -69,33 +84,58 @@ export function ProductTypesView() {
       {loading ? (
         <div className="text-white/60">Loading...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {categories.map((c) => (
-            <div key={c.id} className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-xs text-white/50 uppercase tracking-wide">Slug: {c.slug}</p>
-                  <h4 className="text-lg font-semibold text-white">{c.name}</h4>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    className="p-2 rounded-lg hover:bg-white/10"
-                    onClick={() => { setEditing(c); setModalOpen(true) }}
-                  >
-                    <Pencil className="w-4 h-4 text-white/70" />
-                  </button>
-                  <button
-                    className="p-2 rounded-lg hover:bg-red-500/10"
-                    onClick={() => handleDelete(c.id)}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-300" />
-                  </button>
-                </div>
-              </div>
-              {c.description && <p className="text-sm text-white/70">{c.description}</p>}
+        <>
+          <div className="flex items-center justify-between text-white/70 text-sm">
+            <div>{selected.length} selected</div>
+            <div className="flex gap-2">
+              <button
+                onClick={bulkDelete}
+                className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-200 text-sm"
+                disabled={selected.length === 0}
+              >
+                Delete selected
+              </button>
+              <button
+                onClick={() => setSelected(categories.map((c) => c.id))}
+                className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm"
+                disabled={categories.length === 0}
+              >
+                Select all
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {categories.map((c) => (
+              <div key={c.id} className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs text-white/60">
+                    <input type="checkbox" className="accent-emerald-500" checked={selected.includes(c.id)} onChange={() => toggle(c.id)} />
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide">Slug</p>
+                      <h4 className="text-lg font-semibold text-white">{c.slug}</h4>
+                      <p className="text-sm text-white/70">{c.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      className="p-2 rounded-lg hover:bg-white/10"
+                      onClick={() => { setEditing(c); setModalOpen(true) }}
+                    >
+                      <Pencil className="w-4 h-4 text-white/70" />
+                    </button>
+                    <button
+                      className="p-2 rounded-lg hover:bg-red-500/10"
+                      onClick={() => handleDelete(c.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-300" />
+                    </button>
+                  </div>
+                </div>
+                {c.description && <p className="text-sm text-white/70">{c.description}</p>}
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       <CategoryModal
