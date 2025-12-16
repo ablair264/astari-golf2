@@ -5,7 +5,7 @@ const sql = neon(process.env.VITE_NEON_DATABASE_URL)
 const headers = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
@@ -266,6 +266,166 @@ export async function handler(event) {
       const data = hasMore ? rows.slice(0, limit) : rows
       const nextCursor = hasMore ? data[data.length - 1].id : null
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, variants: data, nextCursor, hasMore }) }
+    }
+
+    // Get filter values for rule creation dropdowns
+    if (method === 'GET' && path === '/filter-values') {
+      const [brands, categories, styles] = await Promise.all([
+        sql`SELECT id, name FROM brands ORDER BY name ASC`,
+        sql`SELECT id, name FROM categories ORDER BY name ASC`,
+        sql`SELECT DISTINCT style_no, MIN(name) as style_name FROM products WHERE style_no IS NOT NULL GROUP BY style_no ORDER BY style_no ASC LIMIT 500`
+      ])
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, brands, categories, styles }) }
+    }
+
+    // Bulk apply margin to selected SKUs
+    if (method === 'POST' && path === '/bulk/margin') {
+      const body = JSON.parse(event.body || '{}')
+      const { skuCodes, marginPercentage } = body
+
+      if (!Array.isArray(skuCodes) || skuCodes.length === 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'skuCodes array required' }) }
+      }
+      if (typeof marginPercentage !== 'number') {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'marginPercentage required' }) }
+      }
+
+      const margin = Number(marginPercentage)
+      const placeholders = skuCodes.map((_, i) => `$${i + 1}`).join(', ')
+
+      const result = await sql({
+        text: `
+          UPDATE products
+          SET
+            margin_percentage = ${margin},
+            calculated_price = ROUND(price * (1 + ${margin}/100.0), 2),
+            final_price = CASE
+              WHEN is_special_offer AND offer_discount_percentage IS NOT NULL
+                THEN ROUND(ROUND(price * (1 + ${margin}/100.0), 2) * (1 - offer_discount_percentage/100.0), 2)
+              ELSE ROUND(price * (1 + ${margin}/100.0), 2)
+            END,
+            updated_at = NOW()
+          WHERE sku IN (${placeholders})
+          RETURNING sku
+        `,
+        values: skuCodes
+      })
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, updated: result.length, skus: result.map(r => r.sku) })
+      }
+    }
+
+    // Bulk apply special offer to selected SKUs
+    if (method === 'POST' && path === '/bulk/special-offer') {
+      const body = JSON.parse(event.body || '{}')
+      const { skuCodes, offerId, discountPercentage } = body
+
+      if (!Array.isArray(skuCodes) || skuCodes.length === 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'skuCodes array required' }) }
+      }
+
+      const discount = Number(discountPercentage) || 0
+      const placeholders = skuCodes.map((_, i) => `$${i + 1}`).join(', ')
+
+      const result = await sql({
+        text: `
+          UPDATE products
+          SET
+            is_special_offer = true,
+            offer_discount_percentage = ${discount},
+            offer_id = ${offerId || 'NULL'},
+            final_price = ROUND(COALESCE(calculated_price, price) * (1 - ${discount}/100.0), 2),
+            updated_at = NOW()
+          WHERE sku IN (${placeholders})
+          RETURNING sku
+        `,
+        values: skuCodes
+      })
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, updated: result.length, skus: result.map(r => r.sku) })
+      }
+    }
+
+    // Bulk remove special offer from selected SKUs
+    if (method === 'DELETE' && path === '/bulk/special-offer') {
+      const body = JSON.parse(event.body || '{}')
+      const { skuCodes } = body
+
+      if (!Array.isArray(skuCodes) || skuCodes.length === 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'skuCodes array required' }) }
+      }
+
+      const placeholders = skuCodes.map((_, i) => `$${i + 1}`).join(', ')
+
+      const result = await sql({
+        text: `
+          UPDATE products
+          SET
+            is_special_offer = false,
+            offer_discount_percentage = NULL,
+            offer_id = NULL,
+            final_price = COALESCE(calculated_price, price),
+            updated_at = NOW()
+          WHERE sku IN (${placeholders})
+          RETURNING sku
+        `,
+        values: skuCodes
+      })
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, updated: result.length, skus: result.map(r => r.sku) })
+      }
+    }
+
+    // Update all products by style_no (style-level editing)
+    if (method === 'PUT' && /^\/style\/[A-Za-z0-9_-]+$/.test(path)) {
+      const styleNo = path.replace('/style/', '')
+      const body = JSON.parse(event.body || '{}')
+      const { name, description, images, category_id } = body
+
+      const updates = ['updated_at = NOW()']
+      const values = []
+
+      if (name !== undefined) {
+        values.push(name)
+        updates.push(`name = $${values.length}`)
+      }
+      if (description !== undefined) {
+        values.push(description)
+        updates.push(`description = $${values.length}`)
+      }
+      if (images !== undefined) {
+        values.push(JSON.stringify(images))
+        updates.push(`images = $${values.length}`)
+      }
+      if (category_id !== undefined) {
+        values.push(category_id)
+        updates.push(`category_id = $${values.length}`)
+      }
+
+      if (updates.length === 1) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'No fields to update' }) }
+      }
+
+      values.push(styleNo)
+      const result = await sql({
+        text: `UPDATE products SET ${updates.join(', ')} WHERE style_no = $${values.length} RETURNING sku`,
+        values
+      })
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, updated: result.length, styleNo })
+      }
     }
 
     // Default list

@@ -45,10 +45,86 @@ export async function handler(event) {
     const path = url.pathname.replace('/.netlify/functions/margin-rules', '')
     const method = event.httpMethod
 
-    // List rules
+    // List rules with affected counts
     if (method === 'GET' && (path === '' || path === '/')) {
-      const rules = await sql`SELECT * FROM margin_rules ORDER BY created_at DESC`
+      const rules = await sql`
+        SELECT mr.*,
+          (SELECT COUNT(*) FROM products p WHERE
+            (mr.sku IS NULL OR p.sku = mr.sku) AND
+            (mr.style_no IS NULL OR p.style_no = mr.style_no) AND
+            (mr.category_id IS NULL OR p.category_id = mr.category_id) AND
+            (mr.brand_id IS NULL OR p.brand_id = mr.brand_id) AND
+            (mr.sku IS NOT NULL OR mr.style_no IS NOT NULL OR mr.category_id IS NOT NULL OR mr.brand_id IS NOT NULL)
+          ) as affected_count
+        FROM margin_rules mr
+        ORDER BY mr.created_at DESC
+      `
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, rules }) }
+    }
+
+    // Preview rule impact (without applying)
+    if (method === 'POST' && path === '/preview') {
+      const body = JSON.parse(event.body || '{}')
+      const { brand_id, category_id, style_no, sku, margin_percentage } = body
+      const margin = Number(margin_percentage) || 0
+
+      const conditions = []
+      if (sku) conditions.push(`p.sku = '${sku.replace(/'/g, "''")}'`)
+      if (style_no) conditions.push(`p.style_no = '${String(style_no).replace(/'/g, "''")}'`)
+      if (category_id) conditions.push(`p.category_id = ${category_id}`)
+      if (brand_id) conditions.push(`p.brand_id = ${brand_id}`)
+
+      if (conditions.length === 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'At least one filter required' }) }
+      }
+
+      const where = `WHERE ${conditions.join(' AND ')}`
+
+      // Get aggregate stats
+      const statsQuery = `
+        SELECT
+          COUNT(*) as total_affected,
+          AVG(p.price) as avg_cost,
+          AVG(p.price * (1 + ${margin}/100.0)) as avg_new_price,
+          MIN(p.price * (1 + ${margin}/100.0)) as min_new_price,
+          MAX(p.price * (1 + ${margin}/100.0)) as max_new_price
+        FROM products p
+        ${where}
+      `
+      const stats = await sql(statsQuery)
+
+      // Get sample products (up to 5)
+      const samplesQuery = `
+        SELECT p.sku, p.name, p.style_no, p.price,
+          p.margin_percentage as current_margin,
+          p.calculated_price as current_price,
+          ROUND(p.price * (1 + ${margin}/100.0), 2) as new_price,
+          b.name as brand_name,
+          c.name as category_name
+        FROM products p
+        LEFT JOIN brands b ON p.brand_id = b.id
+        LEFT JOIN categories c ON p.category_id = c.id
+        ${where}
+        LIMIT 5
+      `
+      const samples = await sql(samplesQuery)
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          preview: {
+            totalAffected: Number(stats[0]?.total_affected) || 0,
+            avgCost: Number(stats[0]?.avg_cost) || 0,
+            avgNewPrice: Number(stats[0]?.avg_new_price) || 0,
+            minNewPrice: Number(stats[0]?.min_new_price) || 0,
+            maxNewPrice: Number(stats[0]?.max_new_price) || 0,
+            marginPercentage: margin,
+            samples
+          }
+        })
+      }
     }
 
     // Create rule

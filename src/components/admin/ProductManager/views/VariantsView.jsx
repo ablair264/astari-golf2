@@ -1,11 +1,26 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useDrillDown } from '../DrillDownContext'
-import { Check, Minus } from 'lucide-react'
+import { Check, Minus, Edit2 } from 'lucide-react'
+import { ProductFormModal } from './Modals/ProductFormModal'
 
 const API = '/.netlify/functions/products-admin/variants'
 
 export function VariantsView() {
   const { toggleSkuSelection, selectedSkus, activeBrand, activeProductType, activeStyleCode, searchQuery } = useDrillDown()
+  const [editVariant, setEditVariant] = useState(null)
+  const [brands, setBrands] = useState([])
+  const [categories, setCategories] = useState([])
+
+  // Fetch brands and categories for the form
+  useEffect(() => {
+    Promise.all([
+      fetch('/.netlify/functions/products-admin/brands-list').then(r => r.json()),
+      fetch('/.netlify/functions/products-admin/categories-list').then(r => r.json())
+    ]).then(([brandsData, categoriesData]) => {
+      setBrands(brandsData.brands || [])
+      setCategories(categoriesData.categories || [])
+    }).catch(console.error)
+  }, [])
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -62,13 +77,13 @@ export function VariantsView() {
       {error && <div className="text-sm text-red-300">{error}</div>}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {data.map((variant) => (
-          <label key={variant.id} className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedSkus.includes(variant.sku) ? 'border-emerald-400/60 bg-emerald-500/10' : 'border-white/10 bg-white/5 hover:border-white/30'}`}>
-            <div className="flex items-center gap-3">
+          <div key={variant.id} className={`p-4 rounded-xl border transition-all group ${selectedSkus.includes(variant.sku) ? 'border-emerald-400/60 bg-emerald-500/10' : 'border-white/10 bg-white/5 hover:border-white/30'}`}>
+            <div className="flex items-start gap-3">
               <input
                 type="checkbox"
                 checked={selectedSkus.includes(variant.sku)}
                 onChange={() => toggleSkuSelection(variant.sku)}
-                className="accent-emerald-500"
+                className="accent-emerald-500 mt-1 cursor-pointer"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-xs text-white/60 uppercase tracking-[0.12em]">
@@ -81,7 +96,7 @@ export function VariantsView() {
                   <span className="capitalize">{variant.colour_name}</span>
                   {variant.sku && <span className="text-white/40">SKU {variant.sku}</span>}
                 </div>
-                <div className="flex flex-col gap-1 text-sm text-white">
+                <div className="flex flex-col gap-1 text-sm text-white mt-1">
                   <div className="flex items-center gap-2 font-semibold">
                     <span className="text-white/70 text-xs uppercase tracking-[0.12em]">With margin</span>
                     <span>£{parseFloat(variant.final_price ?? variant.calculated_price ?? variant.price).toFixed(2)}</span>
@@ -89,8 +104,18 @@ export function VariantsView() {
                   <div className="text-xs text-white/60">Base £{parseFloat(variant.price).toFixed(2)}{variant.margin_percentage ? ` · +${variant.margin_percentage}%` : ''}</div>
                 </div>
               </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditVariant(variant)
+                }}
+                className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                title="Edit variant"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
             </div>
-          </label>
+          </div>
         ))}
       </div>
       {hasMore && (
@@ -98,6 +123,20 @@ export function VariantsView() {
           {loadingMore ? 'Loading more…' : 'Scroll to load more'}
         </div>
       )}
+
+      {/* Edit Variant Modal */}
+      <ProductFormModal
+        open={!!editVariant}
+        onClose={() => setEditVariant(null)}
+        product={editVariant}
+        brands={brands}
+        categories={categories}
+        mode="variant"
+        onSaved={() => {
+          setEditVariant(null)
+          fetchVariants(null, true)
+        }}
+      />
     </div>
   )
 }
