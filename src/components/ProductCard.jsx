@@ -227,7 +227,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
                   {/* Action Buttons */}
                   <Button
                     className={cn(
-                      "flex-1 rounded-full h-10 text-sm font-semibold transition-all",
+                      "flex-1 rounded-full h-10 text-xs font-semibold transition-all",
                       inCart
                         ? "bg-green-500 text-white hover:bg-green-600"
                         : "bg-white text-black hover:bg-white/90"

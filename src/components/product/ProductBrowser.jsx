@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { Search, X, Filter, Grid3x3, List, ChevronDown } from 'lucide-react'
 import { getAllProducts, getCategories, getPriceRange } from '@/services/products'
-import { useCart } from '@/contexts/CartContext'
+import { useCart, cartUtils } from '@/contexts/CartContext'
 import ProductCard from './ProductCard'
 import MobileFilterBar from './MobileFilterBar'
 import MobileRowCard from './MobileRowCard'
@@ -56,6 +56,7 @@ const ProductBrowser = () => {
   }, [])
 
   // Track viewport for mobile-specific UI (sheets, behavior)
+  // Track viewport and remember the user's last view choice
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
@@ -64,20 +65,28 @@ const ProductBrowser = () => {
   }, [])
 
   useEffect(() => {
-    if (isMobile) {
+    // Load saved preference once on mount
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('astari_view_mode') : null
+    if (saved === 'grid' || saved === 'list') {
+      setViewMode(saved)
+    } else if (window.innerWidth < 768) {
       setViewMode('grid')
-    } else {
-      setViewMode('list')
     }
-  }, [isMobile])
+  }, [])
 
   useEffect(() => {
-    if (!isMobile) {
-      setViewMode('list')
-    } else {
+    // Keep mobile on grid to avoid layout breakage, but don't overwrite desktop choice
+    if (isMobile && viewMode === 'list') {
       setViewMode('grid')
     }
-  }, [isMobile])
+  }, [isMobile, viewMode])
+
+  useEffect(() => {
+    // Persist choice for next visit
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('astari_view_mode', viewMode)
+    }
+  }, [viewMode])
 
   // Group variants by style_no (or id fallback) so style_no acts as a product grouping key
   const groupedProducts = useMemo(() => {
@@ -331,6 +340,16 @@ const ProductBrowser = () => {
                         product={product}
                         onAddToCart={handleAddToCart}
                         onClick={() => setSelectedProduct(product)}
+                        isExpanded={!isMobile && expandedId === product.id}
+                        onToggleExpand={(id) => {
+                          if (isMobile) {
+                            setSelectedProduct(product)
+                            setExpandedId(null)
+                          } else {
+                            setExpandedId(id)
+                          }
+                        }}
+                        columns={isMobile ? 2 : 3}
                       />
                     ) : (
                       <ExpandedRow

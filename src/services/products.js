@@ -221,8 +221,13 @@ export const updateProduct = async (id, productData) => {
         images = $6,
         stock_quantity = $7,
         metadata = $8,
-        is_active = $9
-      WHERE id = $10
+        is_active = $9,
+        brand_id = $10,
+        sku = $11,
+        style_no = $12,
+        colour_name = $13,
+        colour_hex = $14
+      WHERE id = $15
       RETURNING *
     `, [
       productData.name,
@@ -234,6 +239,11 @@ export const updateProduct = async (id, productData) => {
       productData.stock_quantity,
       JSON.stringify(productData.metadata || {}),
       productData.is_active !== undefined ? productData.is_active : true,
+      productData.brand_id || null,
+      productData.sku || null,
+      productData.style_no || null,
+      productData.colour_name || null,
+      productData.colour_hex || null,
       id,
     ])
     return result[0]

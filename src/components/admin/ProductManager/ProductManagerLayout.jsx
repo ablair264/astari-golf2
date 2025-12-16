@@ -58,7 +58,7 @@ function ProductManagerContent() {
   const canGoBack = breadcrumbs.length > 1
 
   return (
-    <div className="flex h-[calc(100vh-140px)] gap-4 text-white" style={{ fontFamily: 'Gravesend Sans, sans-serif' }}>
+    <div className="flex h-[calc(100vh-140px)] gap-4 text-white overflow-hidden" style={{ fontFamily: 'Gravesend Sans, sans-serif' }}>
       {/* Left Panel - Rules & Filters */}
       <div
         className={`transition-all duration-300 flex-shrink-0 ${
@@ -69,7 +69,7 @@ function ProductManagerContent() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <div
           className="rounded-t-xl p-4 border-b"
@@ -165,7 +165,7 @@ function ProductManagerContent() {
 
         {/* Content Area */}
         <div
-          className="flex-1 rounded-b-xl overflow-hidden"
+          className="flex-1 rounded-b-xl overflow-y-auto"
           style={{ background: colors.bgDark }}
         >
           {renderView()}

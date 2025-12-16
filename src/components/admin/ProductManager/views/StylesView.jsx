@@ -1,97 +1,102 @@
-import React, { useEffect, useState } from 'react'
-import { Plus, Pencil } from 'lucide-react'
-import { getAllProducts } from '@/services/products'
-import { VariantFormModal } from './Modals/VariantFormModal'
-import { getAllBrands } from '@/services/brands'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { Shirt, Loader2, Percent, Tag, ChevronRight } from 'lucide-react'
+import { useDrillDown } from '../DrillDownContext'
 
-// Treat style_no as grouping key
+const API = '/.netlify/functions/products-admin/styles'
+
 export function StylesView() {
-  const [styles, setStyles] = useState([])
-  const [brands, setBrands] = useState([])
-  const [modalOpen, setModalOpen] = useState(false)
-  const [baseProduct, setBaseProduct] = useState(null)
+  const { navigateTo, searchQuery, activeBrand, activeProductType } = useDrillDown()
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState(null)
+  const [cursor, setCursor] = useState(null)
+  const [hasMore, setHasMore] = useState(true)
+  const loadMoreRef = useRef(null)
+
+  const fetchStyles = useCallback(async (nextCursor = null, reset = false) => {
+    try {
+      if (reset) {
+        setLoading(true)
+        setData([])
+      } else {
+        setLoadingMore(true)
+      }
+      setError(null)
+      const params = new URLSearchParams({ limit: '50' })
+      if (searchQuery) params.set('search', searchQuery)
+      if (activeBrand) params.set('brand', activeBrand)
+      if (activeProductType) params.set('productType', activeProductType)
+      if (nextCursor) params.set('cursor', nextCursor)
+      const res = await fetch(`${API}?${params}`)
+      const result = await res.json()
+      if (!res.ok || result.success === false) throw new Error(result.error || res.statusText)
+      setData((prev) => (reset ? result.styles : [...prev, ...result.styles]))
+      setCursor(result.nextCursor)
+      setHasMore(result.hasMore)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }, [searchQuery, activeBrand, activeProductType])
+
+  useEffect(() => { fetchStyles(null, true) }, [fetchStyles])
 
   useEffect(() => {
-    load()
-  }, [])
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) fetchStyles(cursor)
+    }, { threshold: 0.1 })
+    if (loadMoreRef.current) observer.observe(loadMoreRef.current)
+    return () => observer.disconnect()
+  }, [cursor, hasMore, loadingMore, loading, fetchStyles])
 
-  const load = async () => {
-    const [products, brandData] = await Promise.all([getAllProducts(), getAllBrands()])
-    setBrands(brandData)
-    const map = new Map()
-    products.forEach((p) => {
-      const key = p.style_no || p.id
-      if (!map.has(key)) map.set(key, { style_no: key, items: [] })
-      map.get(key).items.push(p)
-    })
-    const grouped = Array.from(map.values()).map((g) => ({
-      style_no: g.style_no,
-      items: g.items,
-      primary: g.items[0],
-    }))
-    setStyles(grouped)
+  if (loading && data.length === 0) {
+    return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-purple-400 animate-spin" /></div>
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-white">Styles</h3>
-          <p className="text-sm text-white/60">Grouped by style number</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {styles.map((s) => (
-          <div key={s.style_no} className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-white/60">Style</p>
-                <h4 className="text-xl font-semibold text-white">{s.style_no}</h4>
-                <p className="text-sm text-white/70">{s.items.length} variants</p>
+    <div className="p-4 space-y-3 h-full overflow-auto">
+      {error && <div className="text-sm text-red-300">{error}</div>}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {data.map((style) => (
+          <button
+            key={`${style.style_code}-${style.brand}`}
+            onClick={() => navigateTo('variants', { styleCode: style.style_code, brand: style.brand, productType: style.product_type }, `Style ${style.style_code}`)}
+            className="text-left rounded-xl border border-white/10 bg-white/5 p-4 hover:border-purple-400/40 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="p-2 rounded-lg bg-purple-500/20">
+                <Shirt className="w-5 h-5 text-purple-300" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-semibold truncate">{style.style_name || `Style ${style.style_code}`}</div>
+                <div className="text-xs text-white/60">{style.brand} · {style.product_type}</div>
               </div>
-              <button
-                className="px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-100 text-sm flex items-center gap-1"
-                onClick={() => {
-                  setBaseProduct({ ...s.primary, style_no: s.style_no })
-                  setModalOpen(true)
-                }}
-              >
-                <Plus className="w-4 h-4" /> Variant
-              </button>
+              <ChevronRight className="w-4 h-4 text-gray-500" />
             </div>
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-              {s.items.map((v) => (
-                <div key={v.id} className="p-2 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between text-sm text-white/80">
-                  <div className="flex items-center gap-2">
-                    {v.image_url && <img src={v.image_url} alt={v.name} className="w-8 h-8 rounded object-cover" />}
-                    <div>
-                      <div className="font-semibold text-white">{v.name}</div>
-                      <div className="text-xs text-white/60">{v.colour_name || 'Colour'} · £{parseFloat(v.price_with_margin || v.price).toFixed(2)}</div>
-                    </div>
-                  </div>
-                  <button
-                    className="p-2 rounded-lg hover:bg-white/10"
-                    onClick={() => { setBaseProduct(v); setModalOpen(true) }}
-                  >
-                    <Pencil className="w-4 h-4 text-white/70" />
-                  </button>
-                </div>
-              ))}
+            <div className="mt-3 flex items-center gap-3 text-xs text-white/70">
+              <div className="flex items-center gap-1">
+                <Percent className="w-3 h-3 text-purple-300" />
+                <span>{(style.avg_margin ?? 0).toFixed(1)}%</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Tag className="w-3 h-3 text-emerald-300" />
+                <span>{style.special_offer_count || 0} offers</span>
+              </div>
+              <div className="text-white/80">£{(style.min_final_price ?? style.min_cost ?? 0).toFixed(2)} - £{(style.max_final_price ?? style.max_cost ?? 0).toFixed(2)}</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
-
-      <VariantFormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        variant={baseProduct}
-        brands={brands}
-        styleNo={baseProduct?.style_no}
-        baseProduct={baseProduct}
-        onSaved={load}
-      />
+      {hasMore && (
+        <div ref={loadMoreRef} className="py-6 text-center text-white/60 text-sm">
+          {loadingMore ? 'Loading more…' : 'Scroll to load more'}
+        </div>
+      )}
     </div>
   )
 }
+
+export default StylesView

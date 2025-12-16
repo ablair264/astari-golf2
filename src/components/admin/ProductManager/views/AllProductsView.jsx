@@ -1,239 +1,253 @@
-import React, { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Image as ImageIcon, Archive, Copy } from 'lucide-react'
-import { getAllProducts, updateProduct, deleteProduct, createProduct } from '@/services/products'
-import { getSignedUploadUrl, uploadFileToSignedUrl } from '@/services/uploads'
-import { getAllBrands } from '@/services/brands'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { Plus, Loader2, Tag, Percent, Check, Minus, Edit2, Trash2, Image } from 'lucide-react'
+import { useDrillDown } from '../DrillDownContext'
 import { ProductFormModal } from './Modals/ProductFormModal'
-import { BulkActionsModal } from './Modals/BulkActionsModal'
+
+const API = '/.netlify/functions/products-admin'
 
 export function AllProductsView() {
-  const [products, setProducts] = useState([])
-  const [brands, setBrands] = useState([])
-  const [uploadingId, setUploadingId] = useState(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const { searchQuery, activeBrand, activeProductType, activeStyleCode, toggleSkuSelection, selectedSkus } = useDrillDown()
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState(null)
+  const [cursor, setCursor] = useState(null)
+  const [hasMore, setHasMore] = useState(true)
   const [editingProduct, setEditingProduct] = useState(null)
-  const [selected, setSelected] = useState([])
-  const [bulkModalOpen, setBulkModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [brandOptions, setBrandOptions] = useState([])
+  const loadMoreRef = useRef(null)
 
-  useEffect(() => {
-    load()
+  const fetchProducts = useCallback(async (nextCursor = null, reset = false) => {
+    try {
+      if (reset) {
+        setLoading(true)
+        setData([])
+      } else {
+        setLoadingMore(true)
+      }
+      setError(null)
+      const params = new URLSearchParams({ limit: '50' })
+      if (searchQuery) params.set('search', searchQuery)
+      if (activeBrand) params.set('brand', activeBrand)
+      if (activeProductType) params.set('productType', activeProductType)
+      if (activeStyleCode) params.set('style_no', activeStyleCode)
+      if (nextCursor) params.set('cursor', nextCursor)
+      const res = await fetch(`${API}?${params}`)
+      const result = await res.json()
+      if (!res.ok || result.success === false) throw new Error(result.error || res.statusText)
+      setData((prev) => (reset ? result.products : [...prev, ...result.products]))
+      setCursor(result.nextCursor)
+      setHasMore(result.hasMore)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }, [searchQuery, activeBrand, activeProductType, activeStyleCode])
+
+  const fetchBrands = useCallback(async () => {
+    try {
+      const res = await fetch('/.netlify/functions/products-admin/brands-list')
+      const result = await res.json()
+      if (!res.ok || result.success === false) throw new Error(result.error || res.statusText)
+      setBrandOptions(result.brands || [])
+    } catch (err) {
+      console.warn('Brand list load failed', err)
+    }
   }, [])
 
-  const load = async () => {
-    const [data, brandData] = await Promise.all([
-      getAllProducts(),
-      getAllBrands(),
-    ])
-    setProducts(data)
-    setBrands(brandData)
+  useEffect(() => { fetchProducts(null, true) }, [fetchProducts])
+  useEffect(() => { fetchBrands() }, [fetchBrands])
+
+  const brandLookup = useMemo(() => {
+    const map = new Map()
+    brandOptions.forEach((b) => map.set(b.id, b.name))
+    return map
+  }, [brandOptions])
+
+  const brandChoicesFromData = useMemo(() => {
+    const choices = new Map()
+    data.forEach((p) => {
+      if (p.brand_id) choices.set(p.brand_id, p.brand || `Brand #${p.brand_id}`)
+    })
+    return Array.from(choices.entries()).map(([id, name]) => ({ id, name }))
+  }, [data])
+
+  const brandsForModal = brandOptions.length ? brandOptions : brandChoicesFromData
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) fetchProducts(cursor)
+    }, { threshold: 0.1 })
+    if (loadMoreRef.current) observer.observe(loadMoreRef.current)
+    return () => observer.disconnect()
+  }, [cursor, hasMore, loadingMore, loading, fetchProducts])
+
+  if (loading && data.length === 0) {
+    return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-purple-400 animate-spin" /></div>
   }
 
-  const handleUpload = async (product) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.onchange = async () => {
-      const file = input.files?.[0]
-      if (!file) return
-      try {
-        setUploadingId(product.id)
-        const { uploadUrl, publicUrl } = await getSignedUploadUrl(product.brand_slug || 'astari', file.name)
-        await uploadFileToSignedUrl(uploadUrl, file)
-        await updateProduct(product.id, { ...product, image_url: publicUrl })
-        await load()
-      } catch (err) {
-        console.error('Upload failed', err)
-        alert('Upload failed')
-      } finally {
-        setUploadingId(null)
-      }
+  const handleEdit = (product) => {
+    setEditingProduct(product)
+    setIsModalOpen(true)
+  }
+
+  const handleDelete = async (sku) => {
+    if (!window.confirm('Deactivate this product?')) return
+    try {
+      const res = await fetch(`${API}/${sku}`, { method: 'DELETE' })
+      const result = await res.json()
+      if (!res.ok || result.success === false) throw new Error(result.error || res.statusText)
+      setData((prev) => prev.filter((p) => p.sku !== sku))
+    } catch (err) {
+      setError(err.message)
     }
-    input.click()
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this product?')) return
-    await deleteProduct(id)
-    await load()
-  }
-
-  const toggleSelect = (id) => {
-    setSelected((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
-  const bulkDelete = async () => {
-    if (selected.length === 0) return
-    if (!confirm(`Delete ${selected.length} products?`)) return
-    for (const id of selected) {
-      await deleteProduct(id)
-    }
-    setSelected([])
-    await load()
-  }
-
-  const bulkArchive = async () => {
-    if (selected.length === 0) return
-    const updates = products
-      .filter((p) => selected.includes(p.id))
-      .map((p) => updateProduct(p.id, { ...p, is_active: false }))
-    await Promise.all(updates)
-    setSelected([])
-    await load()
-  }
-
-  const bulkDuplicate = async () => {
-    if (selected.length === 0) return
-    const items = products.filter((p) => selected.includes(p.id))
-    for (const p of items) {
-      const copy = { ...p }
-      delete copy.id
-      copy.slug = `${p.slug || p.name}` + '-' + Math.floor(Math.random() * 100000)
-      copy.name = `${p.name} (Copy)`
-      await createProduct(copy)
-    }
-    setSelected([])
-    await load()
+  const handleSaved = () => {
+    setIsModalOpen(false)
+    setEditingProduct(null)
+    fetchProducts(null, true)
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 h-full overflow-auto">
+      {error && <div className="text-sm text-red-300">{error}</div>}
+
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-white">All Products</h3>
-          <p className="text-sm text-white/60">{products.length} items</p>
-        </div>
+        <h3 className="text-lg font-semibold text-white">All Products</h3>
         <button
-          onClick={() => { setEditingProduct(null); setModalOpen(true) }}
-          className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 flex items-center gap-2"
+          onClick={() => {
+            setEditingProduct(null)
+            setIsModalOpen(true)
+          }}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-500"
         >
-          <Plus className="w-4 h-4" /> Add Product
+          <Plus className="w-4 h-4" /> New product
         </button>
       </div>
 
-      <div className="flex items-center justify-between text-white/70 text-sm">
-        <div>{selected.length} selected</div>
-        <div className="flex gap-2">
-          <button
-            onClick={bulkDelete}
-            className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-200 text-sm"
-            disabled={selected.length === 0}
-          >
-            Delete selected
-          </button>
-          <button
-            onClick={bulkArchive}
-            className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm"
-            disabled={selected.length === 0}
-          >
-            Archive selected
-          </button>
-          <button
-            onClick={bulkDuplicate}
-            className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm"
-            disabled={selected.length === 0}
-          >
-            Duplicate selected
-          </button>
-          <button
-            onClick={() => setBulkModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg bg-white/5 text-white text-sm"
-            disabled={selected.length === 0}
-          >
-            More actions
-          </button>
-        </div>
+      <div className="overflow-auto rounded-xl border border-white/10 bg-white/5">
+        <table className="w-full text-sm text-white/80">
+          <thead className="bg-white/5 text-white/60">
+            <tr>
+              <th className="px-3 py-2 text-left w-10">Select</th>
+              <th className="px-3 py-2 text-left w-16">Image</th>
+              <th className="px-3 py-2 text-left">Name</th>
+              <th className="px-3 py-2 text-left">Brand</th>
+              <th className="px-3 py-2 text-left">Type / Category</th>
+              <th className="px-3 py-2 text-left">SKU / Style</th>
+              <th className="px-3 py-2 text-right">Base</th>
+              <th className="px-3 py-2 text-right">Margin</th>
+              <th className="px-3 py-2 text-right">Final</th>
+              <th className="px-3 py-2 text-left">Offer</th>
+              <th className="px-3 py-2 text-left">Stock</th>
+              <th className="px-3 py-2 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {data.map((p) => (
+              <tr key={p.id} className="hover:bg-white/5">
+                <td className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedSkus.includes(p.sku)}
+                    onChange={() => toggleSkuSelection(p.sku)}
+                    className="accent-emerald-500"
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-black/10 border border-white/10 flex items-center justify-center">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Image className="w-5 h-5 text-white/30" />
+                    )}
+                  </div>
+                </td>
+                <td className="px-3 py-2 font-semibold text-white">{p.name}</td>
+                <td className="px-3 py-2">{p.brand || '—'}</td>
+                <td className="px-3 py-2 text-white/70">
+                  <div className="flex flex-col">
+                    <span>{p.product_type || p.category || '—'}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-white/70">
+                  <div className="flex flex-col gap-1">
+                    {p.sku && <span className="text-xs text-white/60">SKU {p.sku}</span>}
+                    {p.style_no && <span className="text-xs text-white/60">Style {p.style_no}</span>}
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-right">£{parseFloat(p.price).toFixed(2)}</td>
+                <td className="px-3 py-2 text-right">
+                  {p.margin_percentage ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-emerald-200 text-xs">
+                      <Percent className="w-3 h-3" /> +{p.margin_percentage}%
+                    </span>
+                  ) : (
+                    <span className="text-white/40 text-xs">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right">
+                  £{parseFloat(p.final_price ?? p.calculated_price ?? p.price).toFixed(2)}
+                </td>
+                <td className="px-3 py-2">
+                  {p.is_special_offer ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-200 text-xs">
+                      <Tag className="w-3 h-3" /> -{p.offer_discount_percentage || 0}%
+                    </span>
+                  ) : (
+                    <span className="text-white/40 text-xs">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-white/70">
+                  <div className="flex items-center gap-2">
+                    {selectedSkus.includes(p.sku) ? <Check className="w-3 h-3 text-emerald-400" /> : <Minus className="w-3 h-3 text-white/40" />}
+                    <span>{p.stock_quantity || 0}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <div className="flex items-center gap-2 justify-end">
+                    <button
+                      onClick={() => handleEdit(p)}
+                      className="p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p.sku)}
+                      className="p-1.5 rounded-lg text-red-300 hover:text-red-200 hover:bg-red-500/10"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {hasMore && (
+          <div ref={loadMoreRef} className="py-6 text-center text-white/60 text-sm">
+            {loadingMore ? 'Loading more…' : 'Scroll to load more'}
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {products.map((p) => (
-          <div key={p.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex gap-4">
-            <div className="w-28 h-28 rounded-lg overflow-hidden bg-black/10 border border-white/10 flex-shrink-0 relative">
-              {p.image_url ? (
-                <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white/40">
-                <ImageIcon className="w-6 h-6" />
-              </div>
-            )}
-            <button
-              onClick={() => handleUpload(p)}
-              className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded"
-              disabled={uploadingId === p.id}
-            >
-              {uploadingId === p.id ? 'Uploading...' : 'Upload'}
-            </button>
-          </div>
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-white/60 uppercase tracking-[0.12em]">
-                <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} className="accent-emerald-500" />
-                <span>{p.brand_name}</span>
-                {p.style_no && <span className="text-white/40">Style {p.style_no}</span>}
-              </div>
-              <h3 className="text-lg font-semibold text-white">{p.name}</h3>
-              <div className="flex items-center gap-2 text-sm text-white/70">
-                <span>{p.category_name}</span>
-                {p.colour_name && (
-                  <span className="flex items-center gap-1 text-xs text-white/60">
-                    <span className="inline-flex h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: p.colour_hex || '#e5e7eb' }} />
-                    <span className="capitalize">{p.colour_name}</span>
-                  </span>
-                )}
-              </div>
-            <div className="flex flex-col gap-1 text-sm text-white">
-              <div className="flex items-center gap-2 font-semibold">
-                <span className="text-white/70 text-xs uppercase tracking-[0.12em]">With margin</span>
-                <span>£{parseFloat(p.price_with_margin || p.price).toFixed(2)}</span>
-                {p.price_min && p.price_max && p.price_max !== p.price_min && (
-                  <span className="text-xs text-white/50">to £{parseFloat(p.price_max).toFixed(2)}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 text-white/70 text-xs">
-                <span>Base £{parseFloat(p.price).toFixed(2)}</span>
-                {p.margin_applied !== undefined && (
-                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-emerald-200">+{p.margin_applied}%</span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-white/60">
-              <span>{p.stock_quantity || 0} in stock</span>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button className="px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-100 text-sm flex items-center gap-1">
-                <Plus className="w-4 h-4" /> Variant
-              </button>
-              <button
-                className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm flex items-center gap-1"
-                onClick={() => { setEditingProduct(p); setModalOpen(true) }}
-              >
-                <Pencil className="w-4 h-4" /> Edit
-              </button>
-              <button
-                onClick={() => handleDelete(p.id)}
-                className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-200 text-sm flex items-center gap-1"
-              >
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      ))}
-      </div>
-
-      <ProductFormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        product={editingProduct}
-        brands={brands}
-        onSaved={load}
-      />
-      <BulkActionsModal
-        open={bulkModalOpen}
-        onClose={() => setBulkModalOpen(false)}
-        onDelete={bulkDelete}
-        onArchive={bulkArchive}
-        onDuplicate={bulkDuplicate}
-        count={selected.length}
-      />
+      {isModalOpen && (
+        <ProductFormModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          product={editingProduct}
+          brands={brandsForModal}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   )
 }
+
+export default AllProductsView

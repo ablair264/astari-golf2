@@ -15,10 +15,15 @@ const ProductCarousel = ({ products, title = 'Recent Products' }) => {
 
   const categories = ['Grips', 'Bags', 'Clubs', 'Balls']
 
-  // Filter products by category
-  const filteredProducts = products.filter(
-    (product) => product.category === activeCategory
-  )
+  // Filter products by category (normalize to category_name from the query)
+  const filteredProducts = products.filter((product) => {
+    const category =
+      product.category_name ||
+      product.category ||
+      product.category_slug ||
+      ''
+    return category.toLowerCase() === activeCategory.toLowerCase()
+  })
 
   const scroll = (direction) => {
     if (scrollRef.current) {
