@@ -454,9 +454,9 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
                     <button
                       type="button"
                       onClick={() => handleChange('is_multipack', !form.is_multipack)}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${form.is_multipack ? 'bg-purple-500' : 'bg-white/20'}`}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${form.is_multipack ? 'bg-purple-500' : 'bg-white/20'}`}
                     >
-                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${form.is_multipack ? 'translate-x-7' : 'translate-x-1'}`} />
+                      <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all duration-200 ${form.is_multipack ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
                   </div>
 
