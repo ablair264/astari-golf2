@@ -1,103 +1,32 @@
-import { query } from '@/lib/neonClient'
-import { getSessionId } from './cart'
+const API_BASE = '/.netlify/functions'
 
-// Generate order number (format: ORD-YYYYMMDD-XXXXX)
-const generateOrderNumber = () => {
-  const date = new Date()
-  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '')
-  const random = Math.floor(Math.random() * 100000).toString().padStart(5, '0')
-  return `ORD-${dateStr}-${random}`
-}
-
-// Place order from cart
-export const placeOrder = async (customerData) => {
+// Place order via checkout function
+export const placeOrder = async (customerData, cart, totals) => {
   try {
-    const sessionId = getSessionId()
+    const response = await fetch(`${API_BASE}/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerData,
+        cart,
+        totals,
+        paymentMethod: 'card'
+      })
+    })
 
-    // Get cart items with product details
-    const cartItems = await query(`
-      SELECT
-        ci.product_id,
-        ci.quantity,
-        p.name,
-        p.price
-      FROM cart_items ci
-      JOIN products p ON ci.product_id = p.id
-      WHERE ci.session_id = $1
-    `, [sessionId])
+    const data = await response.json()
 
-    if (cartItems.length === 0) {
-      throw new Error('Cart is empty')
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to place order')
     }
 
-    // Calculate totals
-    const subtotal = cartItems.reduce((sum, item) =>
-      sum + (parseFloat(item.price) * item.quantity), 0
-    )
-    const tax = subtotal * 0.20 // 20% VAT
-    const shipping = subtotal >= 50 ? 0 : 5
-    const totalAmount = subtotal + tax + shipping
-
-    // Create order
-    const orderNumber = generateOrderNumber()
-    const orderResult = await query(`
-      INSERT INTO orders (
-        order_number,
-        customer_email,
-        customer_name,
-        shipping_address,
-        total_amount,
-        status
-      )
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-    `, [
-      orderNumber,
-      customerData.email,
-      customerData.name || '',
-      JSON.stringify(customerData.address || {}),
-      totalAmount,
-      'pending'
-    ])
-
-    const order = orderResult[0]
-
-    // Create order lines
-    for (const item of cartItems) {
-      const unitPrice = parseFloat(item.price)
-      const subtotal = unitPrice * item.quantity
-
-      await query(`
-        INSERT INTO order_lines (
-          order_id,
-          product_id,
-          product_name,
-          quantity,
-          unit_price,
-          subtotal
-        )
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `, [
-        order.id,
-        item.product_id,
-        item.name,
-        item.quantity,
-        unitPrice,
-        subtotal
-      ])
-    }
-
-    // Clear cart after successful order
-    await query(`
-      DELETE FROM cart_items WHERE session_id = $1
-    `, [sessionId])
-
+    // Return order with items and totals for confirmation page
     return {
-      ...order,
-      items: cartItems,
-      subtotal,
-      tax,
-      shipping
+      ...data.order,
+      items: data.items,
+      subtotal: data.totals.subtotal,
+      tax: data.totals.tax,
+      shipping: data.totals.shipping
     }
   } catch (error) {
     console.error('Error placing order:', error)
@@ -105,28 +34,17 @@ export const placeOrder = async (customerData) => {
   }
 }
 
-// Get order by ID
+// Get order by ID (for customer order lookup)
 export const getOrder = async (orderId) => {
   try {
-    const orderResult = await query(`
-      SELECT * FROM orders WHERE id = $1
-    `, [orderId])
+    const response = await fetch(`${API_BASE}/orders-admin/${orderId}`)
+    const data = await response.json()
 
-    if (orderResult.length === 0) {
+    if (!data.success) {
       return null
     }
 
-    const order = orderResult[0]
-
-    // Get order lines
-    const lines = await query(`
-      SELECT * FROM order_lines WHERE order_id = $1
-    `, [orderId])
-
-    return {
-      ...order,
-      lines
-    }
+    return data.order
   } catch (error) {
     console.error('Error fetching order:', error)
     throw error
@@ -136,32 +54,16 @@ export const getOrder = async (orderId) => {
 // Get orders by email
 export const getOrdersByEmail = async (email) => {
   try {
-    const orders = await query(`
-      SELECT * FROM orders
-      WHERE customer_email = $1
-      ORDER BY created_at DESC
-    `, [email])
+    const response = await fetch(`${API_BASE}/orders-admin?search=${encodeURIComponent(email)}`)
+    const data = await response.json()
 
-    return orders
+    if (!data.success) {
+      return []
+    }
+
+    return data.orders
   } catch (error) {
     console.error('Error fetching orders by email:', error)
-    throw error
-  }
-}
-
-// Update order status
-export const updateOrderStatus = async (orderId, status) => {
-  try {
-    const result = await query(`
-      UPDATE orders
-      SET status = $1, updated_at = NOW()
-      WHERE id = $2
-      RETURNING *
-    `, [status, orderId])
-
-    return result[0]
-  } catch (error) {
-    console.error('Error updating order status:', error)
     throw error
   }
 }

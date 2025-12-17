@@ -100,7 +100,7 @@ export const dashboardRoutes = [
     id: "orders",
     title: "Orders",
     icon: <ShoppingBag className="size-4" />,
-    link: "/admin?tab=orders",
+    link: "/admin/orders",
   },
   {
     id: "livechat",

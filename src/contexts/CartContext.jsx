@@ -220,9 +220,16 @@ export const CartProvider = ({ children }) => {
   // Place order
   const placeOrder = async (customerData) => {
     try {
-      const order = await orderService.placeOrder(customerData)
+      const order = await orderService.placeOrder(customerData, cart, {
+        subtotal,
+        tax,
+        shipping,
+        total
+      })
       // Clear local cart after successful order
       setCart([])
+      // Clear localStorage cart
+      localStorage.removeItem(CART_STORAGE_KEY)
       return order
     } catch (error) {
       console.error('Failed to place order:', error)
