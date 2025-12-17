@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Search, Filter, RotateCcw, ChevronLeft, X, Settings2 } from 'lucide-react'
+import { Search, Filter, RotateCcw, ChevronLeft, X, Settings2, Upload } from 'lucide-react'
 import { DrillDownProvider, useDrillDown } from './DrillDownContext'
 import { ViewSwitcher } from './ViewSwitcher'
 import { Breadcrumbs } from './Breadcrumbs'
 import { RulesPanel } from './RulesPanel'
 import { BulkActionBar } from './BulkActionBar'
+import ProductUploadModal from '../ProductUploadModal'
 
 // Views
 import { BrandsView } from './views/BrandsView'
@@ -37,6 +38,7 @@ function ProductManagerContent() {
   } = useDrillDown()
 
   const [isRulesPanelOpen, setIsRulesPanelOpen] = useState(true)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
   const renderView = () => {
     switch (currentView) {
@@ -92,6 +94,13 @@ function ProductManagerContent() {
                 </button>
               )}
               <ViewSwitcher />
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 transition-colors border border-emerald-500/30"
+              >
+                <Upload className="w-4 h-4" />
+                <span className="text-sm font-medium">Import Products</span>
+              </button>
             </div>
 
             {/* Selection indicator */}
@@ -174,6 +183,16 @@ function ProductManagerContent() {
 
       {/* Bulk Action Bar - appears when items are selected */}
       <BulkActionBar />
+
+      {/* Product Upload Modal */}
+      <ProductUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onImportComplete={() => {
+          setIsUploadModalOpen(false)
+          resetNavigation()
+        }}
+      />
     </div>
   )
 }

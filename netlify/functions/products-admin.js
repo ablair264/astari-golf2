@@ -405,7 +405,8 @@ exports.handler = async function(event) {
         name, sku, style_no, brand_id, category_id, price,
         description, image_url, images, colour_name, colour_hex,
         stock_quantity, material, size, core_size,
-        pack_quantity, is_multipack, parent_product_id
+        pack_quantity, is_multipack, parent_product_id,
+        brand_name, category_name // Support name-based lookup
       } = data
 
       if (!name) {
@@ -417,6 +418,44 @@ exports.handler = async function(event) {
 
       // Generate slug from name
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+      // Resolve brand_id from brand_name if provided
+      let resolvedBrandId = brand_id || null
+      if (!resolvedBrandId && brand_name) {
+        // Look up or create brand
+        const existingBrand = await sql`SELECT id FROM brands WHERE LOWER(name) = LOWER(${brand_name}) LIMIT 1`
+        if (existingBrand.length > 0) {
+          resolvedBrandId = existingBrand[0].id
+        } else {
+          // Create new brand
+          const brandSlug = brand_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+          const newBrand = await sql`
+            INSERT INTO brands (name, slug, created_at, updated_at)
+            VALUES (${brand_name}, ${brandSlug}, NOW(), NOW())
+            RETURNING id
+          `
+          resolvedBrandId = newBrand[0].id
+        }
+      }
+
+      // Resolve category_id from category_name if provided
+      let resolvedCategoryId = category_id || null
+      if (!resolvedCategoryId && category_name) {
+        // Look up or create category
+        const existingCategory = await sql`SELECT id FROM categories WHERE LOWER(name) = LOWER(${category_name}) LIMIT 1`
+        if (existingCategory.length > 0) {
+          resolvedCategoryId = existingCategory[0].id
+        } else {
+          // Create new category
+          const categorySlug = category_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+          const newCategory = await sql`
+            INSERT INTO categories (name, slug, created_at, updated_at)
+            VALUES (${category_name}, ${categorySlug}, NOW(), NOW())
+            RETURNING id
+          `
+          resolvedCategoryId = newCategory[0].id
+        }
+      }
 
       const result = await sql`
         INSERT INTO products (
@@ -430,8 +469,8 @@ exports.handler = async function(event) {
           ${slug},
           ${sku},
           ${style_no || null},
-          ${brand_id || null},
-          ${category_id || null},
+          ${resolvedBrandId},
+          ${resolvedCategoryId},
           ${parseFloat(price) || 0},
           ${description || null},
           ${image_url || null},
