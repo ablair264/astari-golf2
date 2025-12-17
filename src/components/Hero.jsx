@@ -157,7 +157,7 @@ const Hero = () => {
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm z-[5]" />
 
       {/* Overlay Content - Different Layouts */}
-      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-20">
+      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-20 pt-20 md:pt-24">
         {/* Layout 1: Hero - Clean, impactful main slide */}
         {currentSlideData.layout === 'hero' && (
           <div className="max-w-6xl mx-auto w-full">
