@@ -20,6 +20,7 @@ import AdminOrders from '@/pages/AdminOrders'
 import AdminOrderDetail from '@/pages/AdminOrderDetail'
 import AdminInventory from '@/pages/AdminInventory'
 import AdminCategories from '@/pages/AdminCategories'
+import AdminImageManager from '@/pages/AdminImageManager'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext'
 import { CustomerAuthProvider } from '@/contexts/CustomerAuthContext'
@@ -444,6 +445,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminCategories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/images"
+            element={
+              <ProtectedRoute>
+                <AdminImageManager />
               </ProtectedRoute>
             }
           />

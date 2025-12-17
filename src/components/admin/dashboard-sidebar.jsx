@@ -20,6 +20,7 @@ import {
   List,
   MessageCircle,
   Warehouse,
+  Image,
 } from "lucide-react"
 import { Logo } from "./logo"
 import DashboardNavigation from "./nav-main"
@@ -86,6 +87,11 @@ export const dashboardRoutes = [
         title: "Margin Manager",
         icon: <Percent className="size-3" />,
         link: "/admin/margins",
+      },
+      {
+        title: "Image Manager",
+        icon: <Image className="size-3" />,
+        link: "/admin/images",
       },
     ],
   },
