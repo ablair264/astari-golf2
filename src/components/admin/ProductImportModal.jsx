@@ -213,7 +213,7 @@ export function ProductImportModal({ open, onOpenChange, onImportComplete }) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-hidden bg-[#1e2329] text-white border-gray-700 p-0">
+      <DialogContent className="w-[98vw] max-w-7xl max-h-[90vh] overflow-hidden bg-[#1e2329] text-white border-gray-700 p-0">
         <DialogHeader className="p-6 pb-4 border-b border-gray-700">
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <FileSpreadsheet className="w-6 h-6 text-emerald-400" />
