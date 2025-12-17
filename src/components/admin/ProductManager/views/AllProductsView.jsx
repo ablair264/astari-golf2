@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { Plus, Loader2, Tag, Percent, Check, Minus, Edit2, Trash2, Image } from 'lucide-react'
+import { Plus, Loader2, Tag, Percent, Check, Minus, Edit2, Trash2, Image, Package } from 'lucide-react'
 import { useDrillDown } from '../DrillDownContext'
 import { ProductFormModal } from './Modals/ProductFormModal'
 
@@ -16,6 +16,7 @@ export function AllProductsView() {
   const [editingProduct, setEditingProduct] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [brandOptions, setBrandOptions] = useState([])
+  const [categoryOptions, setCategoryOptions] = useState([])
   const loadMoreRef = useRef(null)
 
   const fetchProducts = useCallback(async (nextCursor = null, reset = false) => {
@@ -47,19 +48,23 @@ export function AllProductsView() {
     }
   }, [searchQuery, activeBrand, activeProductType, activeStyleCode])
 
-  const fetchBrands = useCallback(async () => {
+  const fetchBrandsAndCategories = useCallback(async () => {
     try {
-      const res = await fetch('/.netlify/functions/products-admin/brands-list')
-      const result = await res.json()
-      if (!res.ok || result.success === false) throw new Error(result.error || res.statusText)
-      setBrandOptions(result.brands || [])
+      const [brandsRes, categoriesRes] = await Promise.all([
+        fetch('/.netlify/functions/products-admin/brands-list'),
+        fetch('/.netlify/functions/products-admin/categories-list')
+      ])
+      const brandsResult = await brandsRes.json()
+      const categoriesResult = await categoriesRes.json()
+      if (brandsResult.success !== false) setBrandOptions(brandsResult.brands || [])
+      if (categoriesResult.success !== false) setCategoryOptions(categoriesResult.categories || [])
     } catch (err) {
-      console.warn('Brand list load failed', err)
+      console.warn('Options load failed', err)
     }
   }, [])
 
   useEffect(() => { fetchProducts(null, true) }, [fetchProducts])
-  useEffect(() => { fetchBrands() }, [fetchBrands])
+  useEffect(() => { fetchBrandsAndCategories() }, [fetchBrandsAndCategories])
 
   const brandLookup = useMemo(() => {
     const map = new Map()
@@ -167,7 +172,17 @@ export function AllProductsView() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-2 font-semibold text-white">{p.name}</td>
+                <td className="px-3 py-2 font-semibold text-white">
+                  <div className="flex items-center gap-2">
+                    {p.name}
+                    {p.is_multipack && (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded text-[10px] font-bold whitespace-nowrap">
+                        <Package className="w-3 h-3" />
+                        {p.pack_quantity ? `×${p.pack_quantity}` : 'Pack'}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-3 py-2">{p.brand || '—'}</td>
                 <td className="px-3 py-2 text-white/70">
                   <div className="flex flex-col">
@@ -243,6 +258,7 @@ export function AllProductsView() {
           onClose={() => setIsModalOpen(false)}
           product={editingProduct}
           brands={brandsForModal}
+          categories={categoryOptions}
           onSaved={handleSaved}
         />
       )}

@@ -279,12 +279,45 @@ export async function handler(event) {
         return { statusCode: 404, headers, body: JSON.stringify({ error: 'Customer not found' }) }
       }
 
+      // Calculate order stats dynamically from orders table
+      const orderStats = await sql`
+        SELECT
+          COUNT(*) as order_count,
+          COALESCE(SUM(total_amount), 0) as total_spent,
+          COALESCE(AVG(total_amount), 0) as average_order_value,
+          MIN(created_at) as first_order_date,
+          MAX(created_at) as last_order_date
+        FROM orders
+        WHERE customer_id = ${id}
+      `
+
+      // Fetch recent orders for this customer
+      const recentOrders = await sql`
+        SELECT id, order_number, total_amount, item_count, delivery_status, created_at
+        FROM orders
+        WHERE customer_id = ${id}
+        ORDER BY created_at DESC
+        LIMIT 10
+      `
+
       const contacts = await sql`SELECT * FROM customer_contacts WHERE customer_id = ${id} ORDER BY is_primary DESC`
+
+      // Merge dynamic order stats with customer data
+      const customer = {
+        ...customers[0],
+        order_count: parseInt(orderStats[0]?.order_count) || 0,
+        total_spent: parseFloat(orderStats[0]?.total_spent) || 0,
+        average_order_value: parseFloat(orderStats[0]?.average_order_value) || 0,
+        first_order_date: orderStats[0]?.first_order_date || null,
+        last_order_date: orderStats[0]?.last_order_date || null,
+        outstanding_amount: 0, // Could calculate from unpaid invoices if needed
+        recent_orders: recentOrders
+      }
 
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: true, customer: customers[0], contacts })
+        body: JSON.stringify({ success: true, customer, contacts })
       }
     }
 

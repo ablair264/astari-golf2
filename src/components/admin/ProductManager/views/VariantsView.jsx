@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useDrillDown } from '../DrillDownContext'
-import { Check, Minus, Edit2 } from 'lucide-react'
+import { Check, Minus, Edit2, Package } from 'lucide-react'
 import { ProductFormModal } from './Modals/ProductFormModal'
 
 const API = '/.netlify/functions/products-admin/variants'
@@ -89,6 +89,12 @@ export function VariantsView() {
                 <div className="flex items-center gap-2 text-xs text-white/60 uppercase tracking-[0.12em]">
                   <span>{variant.brand}</span>
                   {variant.style_no && <span className="text-white/40">Style {variant.style_no}</span>}
+                  {variant.is_multipack && (
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded text-[10px] font-bold">
+                      <Package className="w-3 h-3" />
+                      {variant.pack_quantity ? `×${variant.pack_quantity}` : 'Pack'}
+                    </span>
+                  )}
                 </div>
                 <h4 className="text-white font-semibold truncate">{variant.name}</h4>
                 <div className="flex items-center gap-2 text-xs text-white/60">

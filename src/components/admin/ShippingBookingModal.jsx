@@ -123,12 +123,12 @@ export default function ShippingBookingModal({ open, onClose, orderId, onSuccess
             <select
               value={formData.courier}
               onChange={(e) => handleChange('courier', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="w-full px-4 py-3 rounded-xl bg-[#1a1f26] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 [&>option]:bg-[#1a1f26] [&>option]:text-white"
               required
             >
-              <option value="">Select a courier...</option>
+              <option value="" className="bg-[#1a1f26] text-white/60">Select a courier...</option>
               {COURIERS.map(courier => (
-                <option key={courier.id} value={courier.id}>
+                <option key={courier.id} value={courier.id} className="bg-[#1a1f26] text-white">
                   {courier.name}
                 </option>
               ))}

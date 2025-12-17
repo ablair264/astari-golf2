@@ -198,7 +198,7 @@ export default function AdminCustomerDetail() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-white/10 mb-6 overflow-x-auto">
-        {['overview', 'financial', 'notes'].map((tab) => (
+        {['overview', 'orders', 'financial', 'notes'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -298,6 +298,40 @@ export default function AdminCustomerDetail() {
               )}
             </div>
           </>
+        )}
+
+        {activeTab === 'orders' && (
+          <InfoCard title="Recent Orders" icon={<Package className="w-5 h-5" />}>
+            {customer.recent_orders && customer.recent_orders.length > 0 ? (
+              <div className="space-y-3">
+                {customer.recent_orders.map((order) => (
+                  <div
+                    key={order.id}
+                    onClick={() => navigate(`/admin/orders/${order.id}`)}
+                    className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-colors"
+                  >
+                    <div>
+                      <p className="text-white font-medium">{order.order_number}</p>
+                      <p className="text-white/50 text-sm">{formatDate(order.created_at)} • {order.item_count} items</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white font-semibold">{formatCurrency(order.total_amount)}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded capitalize ${
+                        order.delivery_status === 'delivered' ? 'bg-emerald-500/20 text-emerald-300' :
+                        order.delivery_status === 'shipped' ? 'bg-blue-500/20 text-blue-300' :
+                        order.delivery_status === 'processing' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-white/10 text-white/60'
+                      }`}>
+                        {order.delivery_status || 'new'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-white/50 italic">No orders yet.</p>
+            )}
+          </InfoCard>
         )}
 
         {activeTab === 'financial' && (

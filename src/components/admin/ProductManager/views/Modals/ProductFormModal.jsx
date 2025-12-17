@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from 'react'
-import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { X, Loader2, CheckCircle, AlertCircle, Package, Search } from 'lucide-react'
 import { ImageDropzone } from '@/components/admin/ImageDropzone'
 
 const API_BASE = '/.netlify/functions/products-admin'
+
+// Debounce hook for search
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(handler)
+  }, [value, delay])
+  return debouncedValue
+}
 
 // Mode: 'create' | 'style' | 'variant'
 // - create: Full form for new product
@@ -26,7 +36,19 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
     colour_name: '',
     colour_hex: '',
     stock_quantity: '',
+    // Multipack fields
+    is_multipack: false,
+    pack_quantity: '',
+    parent_product_id: '',
   })
+
+  // For parent product search
+  const [parentSearch, setParentSearch] = useState('')
+  const [parentProducts, setParentProducts] = useState([])
+  const [loadingParents, setLoadingParents] = useState(false)
+  const [showParentDropdown, setShowParentDropdown] = useState(false)
+  const [selectedParent, setSelectedParent] = useState(null)
+  const debouncedParentSearch = useDebounce(parentSearch, 300)
 
   useEffect(() => {
     if (product) {
@@ -57,7 +79,14 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
         colour_name: product.colour_name || '',
         colour_hex: product.colour_hex || '',
         stock_quantity: product.stock_quantity || '',
+        is_multipack: product.is_multipack || false,
+        pack_quantity: product.pack_quantity || '',
+        parent_product_id: product.parent_product_id || '',
       })
+      // If editing a multipack with a parent, set selectedParent
+      if (product.parent_product_id) {
+        setSelectedParent({ id: product.parent_product_id, name: product.parent_name || `Product #${product.parent_product_id}` })
+      }
     } else {
       setForm({
         name: '',
@@ -72,11 +101,43 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
         colour_name: '',
         colour_hex: '',
         stock_quantity: '',
+        is_multipack: false,
+        pack_quantity: '',
+        parent_product_id: '',
       })
+      setSelectedParent(null)
     }
     // Reset status when modal opens/closes
     setStatus({ type: null, message: '' })
+    setParentSearch('')
+    setShowParentDropdown(false)
   }, [product, open])
+
+  // Search for parent products when typing
+  useEffect(() => {
+    if (!form.is_multipack || !debouncedParentSearch || debouncedParentSearch.length < 2) {
+      setParentProducts([])
+      return
+    }
+
+    const searchParents = async () => {
+      setLoadingParents(true)
+      try {
+        const res = await fetch(`${API_BASE}?search=${encodeURIComponent(debouncedParentSearch)}&limit=20`)
+        const data = await res.json()
+        if (data.success && data.products) {
+          // Filter out the current product and multipacks
+          setParentProducts(data.products.filter(p => p.id !== product?.id && !p.is_multipack))
+        }
+      } catch (err) {
+        console.error('Failed to search products:', err)
+      } finally {
+        setLoadingParents(false)
+      }
+    }
+
+    searchParents()
+  }, [debouncedParentSearch, form.is_multipack, product?.id])
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -154,7 +215,11 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
             images: form.images,
             colour_name: form.colour_name || null,
             colour_hex: form.colour_hex || null,
-            stock_quantity: parseInt(form.stock_quantity) || 0
+            stock_quantity: parseInt(form.stock_quantity) || 0,
+            // Multipack fields
+            is_multipack: form.is_multipack || false,
+            pack_quantity: form.is_multipack ? parseInt(form.pack_quantity) || null : null,
+            parent_product_id: form.is_multipack ? parseInt(form.parent_product_id) || null : null
           })
         })
         successMessage = 'Product created successfully'
@@ -372,6 +437,115 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
                   </div>
                 </Field>
               </div>
+
+              {/* Multipack Section */}
+              {mode === 'create' && (
+                <div className="border border-white/10 rounded-xl p-4 space-y-4 bg-white/[0.02]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        <Package className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-white">Multipack Product</h4>
+                        <p className="text-xs text-white/50">Create a bundle of multiple units</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('is_multipack', !form.is_multipack)}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${form.is_multipack ? 'bg-purple-500' : 'bg-white/20'}`}
+                    >
+                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${form.is_multipack ? 'translate-x-7' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+
+                  {form.is_multipack && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-white/10">
+                      <Field label="Pack Quantity">
+                        <input
+                          type="number"
+                          min="2"
+                          value={form.pack_quantity}
+                          onChange={(e) => handleChange('pack_quantity', e.target.value)}
+                          placeholder="e.g. 3, 6, 12"
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                        />
+                      </Field>
+
+                      <Field label="Parent Product (Individual Item)">
+                        <div className="relative">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                            <input
+                              value={selectedParent ? selectedParent.name : parentSearch}
+                              onChange={(e) => {
+                                setParentSearch(e.target.value)
+                                setSelectedParent(null)
+                                handleChange('parent_product_id', '')
+                                setShowParentDropdown(true)
+                              }}
+                              onFocus={() => setShowParentDropdown(true)}
+                              placeholder="Search for parent product..."
+                              className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                            />
+                          </div>
+
+                          {/* Dropdown */}
+                          {showParentDropdown && (parentProducts.length > 0 || loadingParents) && (
+                            <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-[#1a2030] border border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                              {loadingParents ? (
+                                <div className="p-3 text-center text-white/50 text-sm">
+                                  <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                                  Searching...
+                                </div>
+                              ) : (
+                                parentProducts.map((p) => (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedParent({ id: p.id, name: p.name, sku: p.sku })
+                                      handleChange('parent_product_id', p.id)
+                                      setShowParentDropdown(false)
+                                      setParentSearch('')
+                                    }}
+                                    className="w-full px-3 py-2 text-left hover:bg-white/10 transition-colors flex items-center gap-3"
+                                  >
+                                    {p.image_url && (
+                                      <img src={p.image_url} alt="" className="w-8 h-8 rounded object-cover bg-white/10" />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm text-white truncate">{p.name}</p>
+                                      <p className="text-xs text-white/50">{p.sku} • £{parseFloat(p.price || 0).toFixed(2)}</p>
+                                    </div>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {selectedParent && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 rounded-lg px-3 py-2">
+                            <Package className="w-3.5 h-3.5" />
+                            Selected: {selectedParent.name} {selectedParent.sku && `(${selectedParent.sku})`}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedParent(null)
+                                handleChange('parent_product_id', '')
+                              }}
+                              className="ml-auto text-white/60 hover:text-white"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </Field>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Variant image (single) for variant mode */}
               {mode === 'variant' && (
