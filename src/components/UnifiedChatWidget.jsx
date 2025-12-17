@@ -284,6 +284,9 @@ const UnifiedChatWidget = () => {
     }
   }
 
+  // Don't show on admin pages
+  if (location.pathname.startsWith('/admin')) return null
+
   return (
     <>
       {/* Chat Button */}

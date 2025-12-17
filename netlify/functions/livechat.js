@@ -1,7 +1,7 @@
 // LiveChat API - Handles chat sessions, messages, and admin takeover
 const { neon } = require('@neondatabase/serverless')
 
-const sql = neon(process.env.DATABASE_URL)
+const sql = neon(process.env.VITE_NEON_DATABASE_URL)
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
