@@ -125,36 +125,36 @@ const CheckoutPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-[#1a1f26] to-[#252a32]">
 
       {/* Header */}
-      <header ref={headerRef} className="relative z-10 py-8 px-4 md:px-8 lg:px-16 xl:px-24">
+      <header ref={headerRef} className="relative z-10 py-6 md:py-8 px-4 md:px-8 lg:px-16 xl:px-24">
         <div className="max-w-[1400px] mx-auto">
           <button
             onClick={() => navigate(-1)}
-            className="group flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors duration-300 mb-8"
+            className="group flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors duration-300 mb-4 md:mb-8"
           >
-            <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
-            <span className="font-medium">Back to Cart</span>
+            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 group-hover:-translate-x-1" />
+            <span className="font-medium text-sm md:text-base">Back to Cart</span>
           </button>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
             <div>
-              <span className="text-sm font-semibold tracking-[0.3em] uppercase text-emerald-400 mb-4 block">
+              <span className="text-xs md:text-sm font-semibold tracking-[0.2em] md:tracking-[0.3em] uppercase text-emerald-400 mb-2 md:mb-4 block">
                 Secure Checkout
               </span>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.1]">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white tracking-tight leading-[1.1]">
                 Checkout
               </h1>
-              <p className="text-gray-400 mt-4">
+              <p className="text-gray-400 text-sm md:text-base mt-2 md:mt-4">
                 Complete your order in {3 - currentStep + 1} simple step{3 - currentStep + 1 > 1 ? 's' : ''}
               </p>
             </div>
 
-            {/* Progress Indicators - Golf Hole Style */}
-            <div className="hidden md:flex items-center gap-3">
+            {/* Progress Indicators - Mobile: Compact, Desktop: Full */}
+            <div className="flex items-center gap-2 md:gap-3 mt-4 md:mt-0">
               {STEPS.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div className="relative">
                     <motion.div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
+                      className={`w-9 h-9 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
                         currentStep >= step.id
                           ? 'bg-gradient-to-br from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/30'
                           : 'bg-white/10 border-2 border-white/20'
@@ -165,9 +165,9 @@ const CheckoutPage = () => {
                       }}
                     >
                       {currentStep > step.id ? (
-                        <CheckCircle2 className="w-6 h-6 text-white" />
+                        <CheckCircle2 className="w-4 h-4 md:w-6 md:h-6 text-white" />
                       ) : (
-                        <step.icon className={`w-5 h-5 ${currentStep >= step.id ? 'text-white' : 'text-white/50'}`} />
+                        <step.icon className={`w-4 h-4 md:w-5 md:h-5 ${currentStep >= step.id ? 'text-white' : 'text-white/50'}`} />
                       )}
                     </motion.div>
 
@@ -183,7 +183,7 @@ const CheckoutPage = () => {
                   </div>
 
                   {index < STEPS.length - 1 && (
-                    <div className="w-16 h-0.5 mx-2 bg-white/20 relative overflow-hidden">
+                    <div className="w-6 md:w-16 h-0.5 mx-1 md:mx-2 bg-white/20 relative overflow-hidden">
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600"
                         initial={{ scaleX: 0 }}
@@ -201,14 +201,14 @@ const CheckoutPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 px-4 md:px-8 lg:px-16 xl:px-24 pb-24">
-        <div className="max-w-[1400px] mx-auto grid lg:grid-cols-[1fr_450px] gap-12">
+      <main className="relative z-10 px-4 md:px-8 lg:px-16 xl:px-24 pb-16 md:pb-24">
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6 md:gap-8 lg:gap-12">
           {/* Form Section */}
           <motion.div
             ref={formRef}
-            className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-10"
+            className="bg-white/5 backdrop-blur-sm rounded-xl md:rounded-2xl border border-white/10 p-5 sm:p-6 md:p-8 lg:p-10 order-2 lg:order-1"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-5 md:mb-8">
               Delivery Details
             </h2>
 
@@ -343,34 +343,34 @@ const CheckoutPage = () => {
           </motion.div>
 
           {/* Order Summary */}
-          <motion.div ref={summaryRef}>
-            <div className="sticky top-8 bg-[#303843] rounded-2xl p-8 text-white">
-              <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4">
+          <motion.div ref={summaryRef} className="order-1 lg:order-2">
+            <div className="lg:sticky lg:top-8 bg-[#303843] rounded-xl md:rounded-2xl p-5 sm:p-6 md:p-8 text-white">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 md:mb-6 border-b border-white/10 pb-3 md:pb-4">
                 Order Summary
               </h2>
 
               {/* Cart Items */}
-              <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto scrollbar-hide">
+              <div className="space-y-3 md:space-y-4 mb-4 md:mb-6 max-h-[200px] md:max-h-[300px] overflow-y-auto scrollbar-hide">
                 {cart.map((item) => (
-                  <div key={item.id} className="flex gap-4 pb-4 border-b border-white/10 last:border-0">
-                    <div className="w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
+                  <div key={item.id} className="flex gap-3 md:gap-4 pb-3 md:pb-4 border-b border-white/10 last:border-0">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                       {item.media ? (
                         <img src={item.media} alt={item.name} className="w-full h-full object-cover" />
                       ) : (
-                        <ShoppingBag className="w-6 h-6 text-white/40" />
+                        <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-white/40" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{item.name}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-xs md:text-sm truncate">{item.name}</p>
                       {(item.colour_hex || item.size) && (
-                        <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
+                        <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-white/60 mt-0.5 md:mt-1">
                           {item.colour_hex && (
                             <>
                               <span
-                                className="inline-flex h-3 w-3 rounded-full border border-white/20"
+                                className="inline-flex h-2.5 w-2.5 md:h-3 md:w-3 rounded-full border border-white/20"
                                 style={{ backgroundColor: item.colour_hex }}
                               />
-                              <span className="capitalize">{item.colour_name || 'Colour'}</span>
+                              <span className="capitalize truncate">{item.colour_name || 'Colour'}</span>
                             </>
                           )}
                           {item.size && (
@@ -381,33 +381,33 @@ const CheckoutPage = () => {
                           )}
                         </div>
                       )}
-                      <p className="text-xs text-white/60 mt-1">Qty: {item.quantity}</p>
+                      <p className="text-[10px] md:text-xs text-white/60 mt-0.5 md:mt-1">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-semibold">
+                    <p className="font-semibold text-xs md:text-sm flex-shrink-0">
                       {formatPrice(item.price * item.quantity)}
                     </p>
                   </div>
                 ))}
               </div>
 
-              <Separator className="my-6 bg-white/10" />
+              <Separator className="my-4 md:my-6 bg-white/10" />
 
               {/* Totals */}
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm text-white/80">
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex justify-between text-xs md:text-sm text-white/80">
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-white/80">
+                <div className="flex justify-between text-xs md:text-sm text-white/80">
                   <span>Shipping</span>
                   <span>{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-white/80">
+                <div className="flex justify-between text-xs md:text-sm text-white/80">
                   <span>VAT (20%)</span>
                   <span>{formatPrice(tax)}</span>
                 </div>
-                <Separator className="my-4 bg-white/10" />
-                <div className="flex justify-between text-xl font-bold">
+                <Separator className="my-3 md:my-4 bg-white/10" />
+                <div className="flex justify-between text-lg md:text-xl font-bold">
                   <span>Total</span>
                   <span className="text-emerald-400">{formatPrice(total)}</span>
                 </div>

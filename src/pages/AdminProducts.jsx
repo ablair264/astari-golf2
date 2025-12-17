@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Search, Filter, Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, X, Plus, Pencil, Upload, Trash2, AlertTriangle } from 'lucide-react'
+import { Search, Filter, Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, X, Plus, Pencil, Upload, Trash2, AlertTriangle, FileSpreadsheet } from 'lucide-react'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { DashboardSidebar } from '@/components/admin/dashboard-sidebar'
 import { ProductFormModal } from '@/components/admin/ProductManager/views/Modals/ProductFormModal'
 import ProductUploadModal from '@/components/admin/ProductUploadModal'
+import { ProductImportModal } from '@/components/admin/ProductImportModal'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const API_BASE = '/.netlify/functions/products-admin'
@@ -44,6 +45,7 @@ export default function AdminProducts() {
   const [editProduct, setEditProduct] = useState(null)
   const [modalMode, setModalMode] = useState('create')
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
 
   // Expanded styles
   const [expandedStyles, setExpandedStyles] = useState(new Set())
@@ -334,19 +336,28 @@ export default function AdminProducts() {
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-white/70 hover:text-white hover:bg-white/5 transition-all"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-blue-500/30 text-blue-200 bg-blue-500/15 hover:bg-blue-500/25 transition-all"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span className="hidden sm:inline">Import CSV</span>
               </button>
               <button
                 onClick={() => setShowUploadModal(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-500/30 text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 transition-all"
               >
-                <Upload className="w-4 h-4" /> Import Products
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">Upload</span>
               </button>
               <button
                 onClick={handleCreate}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium hover:from-emerald-400 hover:to-emerald-600 transition-all"
               >
-                <Plus className="w-4 h-4" /> Add Product
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Product</span>
               </button>
             </div>
           </div>
@@ -810,6 +821,15 @@ export default function AdminProducts() {
           onClose={() => setShowUploadModal(false)}
           onSuccess={() => {
             setShowUploadModal(false)
+            loadProducts(false)
+          }}
+        />
+
+        {/* Product Import Modal (CSV) */}
+        <ProductImportModal
+          open={showImportModal}
+          onOpenChange={setShowImportModal}
+          onImportComplete={() => {
             loadProducts(false)
           }}
         />
