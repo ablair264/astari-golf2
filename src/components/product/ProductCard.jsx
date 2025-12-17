@@ -11,6 +11,7 @@ import {
   Plus,
   Eye,
   Check,
+  Ruler,
 } from 'lucide-react'
 import { cartUtils, useCart } from '@/contexts/CartContext'
 
@@ -25,43 +26,120 @@ const normalizeArray = (val) => {
   }
 }
 
-const buildImages = (product) => {
-  const candidates = [
-    ...normalizeArray(product.images),
-    product.image_url,
-    product.media,
-    ...(product.variants ? product.variants.flatMap((v) => normalizeArray(v.images).concat(v.image_url || [])) : []),
-  ].filter(Boolean)
-  const seen = new Set()
-  const unique = candidates.filter((u) => (seen.has(u) ? false : (seen.add(u), true)))
-  return unique.length ? unique : ['/products/1.png']
+// Size order for sorting
+const SIZE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '2XL', '3XL', '4XL', 'STANDARD', 'MIDSIZE', 'OVERSIZE', 'JUMBO', 'UNDERSIZE']
+
+const sortSizes = (sizes) => {
+  return [...sizes].sort((a, b) => {
+    const aIdx = SIZE_ORDER.findIndex(s => a.toUpperCase().includes(s))
+    const bIdx = SIZE_ORDER.findIndex(s => b.toUpperCase().includes(s))
+    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx
+    if (aIdx !== -1) return -1
+    if (bIdx !== -1) return 1
+    // Try numeric sort
+    const aNum = parseFloat(a)
+    const bNum = parseFloat(b)
+    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
+    return a.localeCompare(b)
+  })
 }
 
-const buildColors = (product) => {
-  if (product.colours?.length) {
-    return product.colours.map((c, idx) => ({
-      id: c.colour_hex || c.colour_name || `color-${idx}`,
-      name: c.colour_name || 'Colour',
-      hex: c.colour_hex || '#e5e7eb',
+// Build variant data structure with colors, images, prices, and sizes
+const buildVariants = (product) => {
+  // If product has variants array, use it
+  if (product.variants?.length) {
+    return product.variants.map(v => ({
+      id: v.id,
+      sku: v.sku,
+      colour_name: v.colour_name || 'Default',
+      colour_hex: v.colour_hex || '#e5e7eb',
+      size: v.size,
+      core_size: v.core_size,
+      material: v.material,
+      price: parseFloat(v.final_price ?? v.calculated_price ?? v.price ?? 0),
+      basePrice: parseFloat(v.price ?? 0),
+      images: normalizeArray(v.images).concat(v.image_url ? [v.image_url] : []).filter(Boolean),
+      stock_quantity: v.stock_quantity,
     }))
   }
-  if (product.variants?.length) {
-    const seen = new Set()
-    return product.variants
-      .map((v) => ({ id: v.colour_hex || v.colour_name || v.id, name: v.colour_name || 'Colour', hex: v.colour_hex || '#e5e7eb' }))
-      .filter((c) => (c.id && !seen.has(c.id) ? seen.add(c.id) : false))
-  }
-  if (product.colour_hex || product.colour_name) {
-    return [{ id: product.colour_hex || product.colour_name, name: product.colour_name || 'Colour', hex: product.colour_hex || '#e5e7eb' }]
-  }
-  return []
+  // Single product - treat as single variant
+  return [{
+    id: product.id,
+    sku: product.sku,
+    colour_name: product.colour_name || 'Default',
+    colour_hex: product.colour_hex || '#e5e7eb',
+    size: product.size,
+    core_size: product.core_size,
+    material: product.material,
+    price: parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? 0),
+    basePrice: parseFloat(product.price ?? 0),
+    images: normalizeArray(product.images).concat(product.image_url ? [product.image_url] : []).filter(Boolean),
+    stock_quantity: product.stock_quantity,
+  }]
 }
 
-const ProductModal = ({ open, onClose, product, images, colors, onAddToCart }) => {
+// Get unique colors from variants
+const getUniqueColors = (variants) => {
+  const seen = new Map()
+  variants.forEach(v => {
+    const key = v.colour_hex || v.colour_name
+    if (key && !seen.has(key)) {
+      seen.set(key, {
+        id: key,
+        name: v.colour_name || 'Colour',
+        hex: v.colour_hex || '#e5e7eb',
+        // Store variant info for this color
+        variant: v,
+      })
+    }
+  })
+  return Array.from(seen.values())
+}
+
+// Get unique sizes from variants
+const getUniqueSizes = (variants) => {
+  const sizes = [...new Set(variants.map(v => v.size).filter(Boolean))]
+  return sortSizes(sizes)
+}
+
+// Get images for a specific color
+const getImagesForColor = (variants, colorHex) => {
+  const colorVariants = variants.filter(v => (v.colour_hex || v.colour_name) === colorHex)
+  const images = colorVariants.flatMap(v => v.images).filter(Boolean)
+  // Remove duplicates
+  return [...new Set(images)]
+}
+
+// Get price range for display (min-max if different)
+const getPriceDisplay = (variants, selectedColorHex) => {
+  const colorVariants = selectedColorHex
+    ? variants.filter(v => (v.colour_hex || v.colour_name) === selectedColorHex)
+    : variants
+
+  if (colorVariants.length === 0) return { min: 0, max: 0, isSame: true }
+
+  const prices = colorVariants.map(v => v.price).filter(p => p > 0)
+  if (prices.length === 0) return { min: 0, max: 0, isSame: true }
+
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+  return { min, max, isSame: min === max }
+}
+
+const ProductModal = ({ open, onClose, product, variants, colors, sizes, selectedVariant, onColorSelect, onAddToCart }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [liked, setLiked] = useState(false)
-  const price = parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? product.price_min ?? 0)
+  const [selectedSize, setSelectedSize] = useState(null)
+
+  const price = selectedVariant?.price || parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? 0)
+  const images = selectedVariant?.images?.length > 0 ? selectedVariant.images : [product.image_url || '/products/1.png']
+
+  // Reset image index when variant changes
+  useEffect(() => {
+    setCurrentImageIndex(0)
+  }, [selectedVariant])
+
   if (!open) return null
 
   return (
@@ -140,15 +218,23 @@ const ProductModal = ({ open, onClose, product, images, colors, onAddToCart }) =
               <span>{product.rating || '4.8'} <span className="text-white/40">({product.reviewCount || '120'})</span></span>
             </div>
           </div>
+
+          {/* Color Selection */}
           {colors.length > 0 && (
             <div className="space-y-2 mb-4">
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">Select Color</p>
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">
+                Color: <span className="text-white">{selectedVariant?.colour_name || colors[0]?.name}</span>
+              </p>
               <div className="flex flex-wrap gap-3">
                 {colors.map((c, idx) => (
                   <button
                     key={c.id || idx}
-                    onClick={() => {}}
-                    className="size-9 rounded-full border border-white/10"
+                    onClick={() => onColorSelect?.(idx)}
+                    className={`size-9 rounded-full border-2 transition-all ${
+                      selectedVariant?.colour_hex === c.hex || selectedVariant?.colour_name === c.name
+                        ? 'border-white scale-110'
+                        : 'border-white/10 hover:scale-105'
+                    }`}
                     style={{ backgroundColor: c.hex }}
                     aria-label={c.name}
                   />
@@ -156,13 +242,55 @@ const ProductModal = ({ open, onClose, product, images, colors, onAddToCart }) =
               </div>
             </div>
           )}
+
+          {/* Size Selection */}
+          {sizes.length > 0 && (
+            <div className="space-y-2 mb-4">
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">
+                Size: <span className="text-white">{selectedSize || 'Select'}</span>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                      selectedSize === size
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Product Specs */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {selectedVariant?.material && (
+              <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wide mb-1">Material</p>
+                <p className="text-white text-sm font-medium">{selectedVariant.material}</p>
+              </div>
+            )}
+            {selectedVariant?.core_size && (
+              <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wide mb-1">Core Size</p>
+                <p className="text-white text-sm font-medium">{selectedVariant.core_size}</p>
+              </div>
+            )}
+          </div>
+
           {product.description && (
             <div className="mb-4">
               <h3 className="text-white text-sm font-bold uppercase tracking-wide mb-2">Description</h3>
               <p className="text-gray-400 text-sm leading-relaxed">{product.description}</p>
             </div>
           )}
-          <div className="flex items-center gap-3 mb-4">
+
+          <div className="flex items-center gap-3 mb-4 mt-auto">
             <div className="flex items-center bg-[#131821] rounded-[5px] h-11 border border-white/5 px-1">
               <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={quantity === 1} className="size-10 text-white/50 hover:text-white disabled:opacity-30" aria-label="Decrease">
                 <Minus size={16} />
@@ -172,7 +300,7 @@ const ProductModal = ({ open, onClose, product, images, colors, onAddToCart }) =
                 <Plus size={16} />
               </button>
             </div>
-            <button onClick={() => onAddToCart?.(product, product, quantity)} className="flex-1 h-11 rounded-[5px] bg-emerald-600 text-white flex items-center justify-center gap-2 hover:bg-emerald-500">
+            <button onClick={() => onAddToCart?.(product, selectedVariant || product, quantity)} className="flex-1 h-11 rounded-[5px] bg-emerald-600 text-white flex items-center justify-center gap-2 hover:bg-emerald-500">
               <ShoppingCart className="w-5 h-5" /> Add to Cart - {cartUtils.formatPrice(price * quantity)}
             </button>
           </div>
@@ -183,8 +311,11 @@ const ProductModal = ({ open, onClose, product, images, colors, onAddToCart }) =
 }
 
 const ProductCard = ({ product, onAddToCart, onClick }) => {
-  const images = useMemo(() => buildImages(product), [product])
-  const colorOptions = useMemo(() => buildColors(product), [product])
+  // Build variants from product data
+  const variants = useMemo(() => buildVariants(product), [product])
+  const colorOptions = useMemo(() => getUniqueColors(variants), [variants])
+  const sizes = useMemo(() => getUniqueSizes(variants), [variants])
+
   const [selectedColorIndex, setSelectedColorIndex] = useState(0)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -194,12 +325,35 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
   const [justAdded, setJustAdded] = useState(false)
 
   const { isInCart, getCartItem } = useCart()
-  const inCart = isInCart(product.id)
-  const cartItem = getCartItem(product.id)
 
-  const color = colorOptions[selectedColorIndex] || null
-  const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5
-  const price = parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? product.price_min ?? 0)
+  // Get the selected color's variant
+  const selectedColor = colorOptions[selectedColorIndex]
+  const selectedVariant = selectedColor?.variant || variants[0]
+
+  // Get images for the selected color
+  const images = useMemo(() => {
+    if (selectedVariant?.images?.length > 0) {
+      return selectedVariant.images
+    }
+    // Fallback to all images
+    const allImages = variants.flatMap(v => v.images).filter(Boolean)
+    return allImages.length > 0 ? [...new Set(allImages)] : [product.image_url || '/products/1.png']
+  }, [selectedVariant, variants, product.image_url])
+
+  // Check cart for the selected variant
+  const variantId = selectedVariant?.id || product.id
+  const inCart = isInCart(variantId)
+  const cartItem = getCartItem(variantId)
+
+  const isLowStock = selectedVariant?.stock_quantity > 0 && selectedVariant?.stock_quantity <= 5
+
+  // Get price for selected variant
+  const price = selectedVariant?.price || parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? 0)
+
+  // Reset image index when color changes
+  useEffect(() => {
+    setCurrentImageIndex(0)
+  }, [selectedColorIndex])
 
   const nextImage = (e) => {
     e.stopPropagation()
@@ -211,8 +365,13 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
   }
 
   const handleAddToCart = () => {
-    onAddToCart?.(product, product, quantity)
+    // Pass the selected variant to cart
+    onAddToCart?.(product, selectedVariant || product, quantity)
     setJustAdded(true)
+  }
+
+  const handleColorSelect = (index) => {
+    setSelectedColorIndex(index)
   }
 
   // Reset "just added" state after animation
@@ -310,17 +469,39 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
 
           {colorOptions.length > 0 && (
             <div className="flex flex-col gap-2">
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">Select Color</p>
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">
+                Color: <span className="text-white/80">{selectedVariant?.colour_name || colorOptions[0]?.name}</span>
+              </p>
               <div className="flex flex-wrap gap-3">
                 {colorOptions.map((c, index) => (
                   <label
                     key={c.id || index}
                     className={`size-8 rounded-full cursor-pointer relative flex items-center justify-center transition-all shadow-sm ${selectedColorIndex === index ? 'ring-2 ring-white scale-110' : 'ring-2 ring-transparent hover:scale-105'}`}
                     style={{ backgroundColor: c.hex, border: c.borderColor ? `2px solid ${c.borderColor}` : '2px solid transparent' }}
-                    onClick={(e) => { e.stopPropagation(); setSelectedColorIndex(index) }}
+                    onClick={(e) => { e.stopPropagation(); handleColorSelect(index) }}
                   >
                     <span className="sr-only">{c.name}</span>
                   </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Size Display */}
+          {sizes.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                <Ruler size={12} />
+                Sizes Available
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {sizes.map((size) => (
+                  <span
+                    key={size}
+                    className="px-2 py-0.5 bg-white/10 rounded text-[10px] font-bold text-white/70 uppercase"
+                  >
+                    {size}
+                  </span>
                 ))}
               </div>
             </div>
@@ -436,8 +617,11 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         product={product}
-        images={images}
+        variants={variants}
         colors={colorOptions}
+        sizes={sizes}
+        selectedVariant={selectedVariant}
+        onColorSelect={handleColorSelect}
         onAddToCart={(prod, variant, qty) => onAddToCart?.(prod, variant, qty || quantity)}
       />
     </>

@@ -404,7 +404,8 @@ exports.handler = async function(event) {
       const {
         name, sku, style_no, brand_id, category_id, price,
         description, image_url, images, colour_name, colour_hex,
-        stock_quantity
+        stock_quantity, material, size, core_size,
+        pack_quantity, is_multipack, parent_product_id
       } = data
 
       if (!name) {
@@ -421,7 +422,9 @@ exports.handler = async function(event) {
         INSERT INTO products (
           name, slug, sku, style_no, brand_id, category_id, price,
           description, image_url, images, colour_name, colour_hex,
-          stock_quantity, is_active, created_at, updated_at
+          stock_quantity, material, size, core_size,
+          pack_quantity, is_multipack, parent_product_id,
+          is_active, created_at, updated_at
         ) VALUES (
           ${name},
           ${slug},
@@ -436,6 +439,12 @@ exports.handler = async function(event) {
           ${colour_name || null},
           ${colour_hex || null},
           ${parseInt(stock_quantity) || 0},
+          ${material || null},
+          ${size || null},
+          ${core_size || null},
+          ${pack_quantity ? parseInt(pack_quantity) : null},
+          ${is_multipack || false},
+          ${parent_product_id ? parseInt(parent_product_id) : null},
           true,
           NOW(),
           NOW()
@@ -504,9 +513,33 @@ exports.handler = async function(event) {
     if (method === 'PUT' && /^\/[A-Za-z0-9_-]+$/.test(path)) {
       const sku = path.substring(1)
       const data = JSON.parse(event.body || '{}')
-      const { marginPercentage, isSpecialOffer, offerDiscountPercentage } = data
+      const {
+        marginPercentage, isSpecialOffer, offerDiscountPercentage,
+        name, description, price, image_url, images, colour_name, colour_hex,
+        stock_quantity, material, size, core_size,
+        pack_quantity, is_multipack, parent_product_id, category_id
+      } = data
 
       const updates = ['updated_at = NOW()']
+
+      // Basic field updates
+      if (name !== undefined) updates.push(`name = '${name.replace(/'/g, "''")}'`)
+      if (description !== undefined) updates.push(`description = ${description ? `'${description.replace(/'/g, "''")}'` : 'NULL'}`)
+      if (price !== undefined) updates.push(`price = ${parseFloat(price) || 0}`)
+      if (image_url !== undefined) updates.push(`image_url = ${image_url ? `'${image_url}'` : 'NULL'}`)
+      if (images !== undefined) updates.push(`images = ${images ? `'${JSON.stringify(images)}'` : 'NULL'}`)
+      if (colour_name !== undefined) updates.push(`colour_name = ${colour_name ? `'${colour_name.replace(/'/g, "''")}'` : 'NULL'}`)
+      if (colour_hex !== undefined) updates.push(`colour_hex = ${colour_hex ? `'${colour_hex}'` : 'NULL'}`)
+      if (stock_quantity !== undefined) updates.push(`stock_quantity = ${parseInt(stock_quantity) || 0}`)
+      if (material !== undefined) updates.push(`material = ${material ? `'${material.replace(/'/g, "''")}'` : 'NULL'}`)
+      if (size !== undefined) updates.push(`size = ${size ? `'${size.replace(/'/g, "''")}'` : 'NULL'}`)
+      if (core_size !== undefined) updates.push(`core_size = ${core_size ? `'${core_size.replace(/'/g, "''")}'` : 'NULL'}`)
+      if (pack_quantity !== undefined) updates.push(`pack_quantity = ${pack_quantity ? parseInt(pack_quantity) : 'NULL'}`)
+      if (is_multipack !== undefined) updates.push(`is_multipack = ${is_multipack ? 'true' : 'false'}`)
+      if (parent_product_id !== undefined) updates.push(`parent_product_id = ${parent_product_id ? parseInt(parent_product_id) : 'NULL'}`)
+      if (category_id !== undefined) updates.push(`category_id = ${category_id ? parseInt(category_id) : 'NULL'}`)
+
+      // Pricing/margin updates
       if (marginPercentage !== undefined) {
         updates.push(`margin_percentage = ${Number(marginPercentage)}`)
         updates.push(`calculated_price = ROUND(price * (1 + ${Number(marginPercentage)}/100.0), 2)`)
