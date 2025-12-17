@@ -25,6 +25,21 @@ const ProductCarousel = ({ products, title = 'Recent Products' }) => {
     return category.toLowerCase() === activeCategory.toLowerCase()
   })
 
+  // Group products by style_no to get variants
+  const getVariantsForProduct = (product) => {
+    if (!product.style_no) return []
+    return filteredProducts.filter(p => p.style_no === product.style_no)
+  }
+
+  // Get unique products by style_no (first variant of each style)
+  const uniqueProducts = filteredProducts.reduce((acc, product) => {
+    const key = product.style_no || product.id
+    if (!acc.find(p => (p.style_no || p.id) === key)) {
+      acc.push(product)
+    }
+    return acc
+  }, [])
+
   const scroll = (direction) => {
     if (scrollRef.current) {
       const scrollAmount = 390 // card width + gap
@@ -133,7 +148,7 @@ const ProductCarousel = ({ products, title = 'Recent Products' }) => {
             }}
           >
             <AnimatePresence mode="wait">
-              {filteredProducts.length > 0 ? (
+              {uniqueProducts.length > 0 ? (
                 <motion.div
                   key={activeCategory}
                   initial={{ opacity: 0, y: 20 }}
@@ -142,9 +157,9 @@ const ProductCarousel = ({ products, title = 'Recent Products' }) => {
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                   className="flex gap-6 md:gap-12"
                 >
-                  {filteredProducts.map((product, index) => (
+                  {uniqueProducts.map((product, index) => (
                     <motion.div
-                      key={product.id}
+                      key={product.style_no || product.id}
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{
@@ -156,10 +171,12 @@ const ProductCarousel = ({ products, title = 'Recent Products' }) => {
                     >
                       <ProductCard
                         product={product}
-                        isExpanded={expandedCardId === product.id}
+                        variants={getVariantsForProduct(product)}
+                        isExpanded={expandedCardId === (product.style_no || product.id)}
                         onToggleExpand={(shouldExpand) => {
                           // If expanding, set this card as expanded; if collapsing, clear expanded card
-                          const newExpandedId = shouldExpand ? product.id : null
+                          const cardKey = product.style_no || product.id
+                          const newExpandedId = shouldExpand ? cardKey : null
                           setExpandedCardId(newExpandedId)
                           setHasExpandedCard(shouldExpand)
 

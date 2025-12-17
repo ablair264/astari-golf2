@@ -84,20 +84,20 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
 
   const handleWishlistClick = (e) => {
     e.stopPropagation()
-    toggleWishlist(product)
+    toggleWishlist(displayProduct)
   }
 
   const handleAddToCart = (e) => {
     e.stopPropagation()
-    addToCart(product, quantity)
+    addToCart(displayProduct, quantity)
     setJustAdded(true)
     // Reset quantity after adding to cart
     setQuantity(1)
     // Show toast notification
     showCartToast({
-      name: product.name,
-      media: product.media || product.image_url,
-      final_price: product.final_price ?? product.calculated_price ?? product.price,
+      name: displayProduct.name,
+      media: currentImageUrl,
+      final_price: displayProduct.final_price ?? displayProduct.calculated_price ?? displayProduct.price,
     }, quantity)
   }
 
@@ -125,8 +125,8 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
         />
       ) : (
         <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${product.media})` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat transition-all duration-500"
+          style={{ backgroundImage: `url(${currentImageUrl})` }}
         />
       )}
 
@@ -148,7 +148,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
             {/* Collapsed View - Top Section - Brand & Product Name */}
             <div className="space-y-2">
               <span className="block text-gray-200 text-base font-semibold tracking-wide drop-shadow-lg uppercase">
-                {product.brand}
+                {product.brand_name || product.brand}
               </span>
               <span className="block text-white text-2xl font-bold drop-shadow-lg leading-tight">
                 {product.name}
@@ -159,7 +159,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
             <div className="flex justify-between items-center">
               {/* Price */}
               <span className="text-white text-3xl font-medium drop-shadow-lg">
-                £{product.final_price ?? product.calculated_price ?? product.price}
+                £{Number(product.final_price ?? product.calculated_price ?? product.price).toFixed(2)}
               </span>
 
               {/* Action Buttons - Always visible */}
@@ -195,7 +195,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
         ) : (
           <>
             {/* Expanded View */}
-            <div className="relative w-full h-full flex flex-col md:flex-row gap-6 md:gap-8">
+            <div className="relative w-full h-full flex flex-col md:flex-row gap-4 md:gap-6 overflow-y-auto">
               {/* Close Button */}
               <button
                 onClick={handleCollapse}
@@ -206,76 +206,142 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
               </button>
 
               {/* Left Section - Product Info */}
-              <div className="flex-1 flex flex-col gap-4 md:gap-5">
+              <div className="flex-1 flex flex-col gap-3 md:gap-4 min-w-0">
                 {/* Header */}
-                <div className="space-y-2">
-                  <span className="block text-gray-200 text-base font-semibold tracking-wide drop-shadow-lg uppercase">
-                    {product.brand}
-                  </span>
-                  <h2 className="text-white text-2xl md:text-3xl font-bold drop-shadow-lg leading-tight">
-                    {product.name}
-                  </h2>
-                  <div className="pt-1">
-                    <span className="text-white text-3xl md:text-4xl font-medium drop-shadow-lg">
-                      £{product.final_price ?? product.calculated_price ?? product.price}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-300 text-xs font-semibold tracking-wide uppercase">
+                      {displayProduct.brand_name || displayProduct.brand}
                     </span>
+                    {displayProduct.category_name && (
+                      <>
+                        <span className="text-white/30">·</span>
+                        <span className="text-gray-400 text-xs">{displayProduct.category_name}</span>
+                      </>
+                    )}
+                  </div>
+                  <h2 className="text-white text-xl md:text-2xl font-bold leading-tight pr-12">
+                    {displayProduct.name}
+                  </h2>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-white text-2xl md:text-3xl font-medium">
+                      £{Number(displayProduct.final_price ?? displayProduct.calculated_price ?? displayProduct.price).toFixed(2)}
+                    </span>
+                    {displayProduct.sku && (
+                      <span className="text-white/40 text-xs font-mono">SKU: {displayProduct.sku}</span>
+                    )}
                   </div>
                 </div>
 
-                {/* Description & Materials */}
-                <div className="space-y-4 flex-1">
-                  {product.description && (
-                    <div className="space-y-1.5">
-                      <h3 className="text-white text-xs font-semibold uppercase tracking-wider">Description</h3>
-                      <p className="text-gray-200 text-xs md:text-sm leading-relaxed">
-                        {product.description}
-                      </p>
+                {/* Product Details Grid */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                  {displayProduct.colour_name && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/50">Colour:</span>
+                      <div className="flex items-center gap-1.5">
+                        {displayProduct.colour_hex && (
+                          <span
+                            className="w-3 h-3 rounded-full border border-white/30"
+                            style={{ backgroundColor: displayProduct.colour_hex }}
+                          />
+                        )}
+                        <span className="text-white">{displayProduct.colour_name}</span>
+                      </div>
                     </div>
                   )}
-
-                  {product.materials && (
-                    <div className="space-y-1.5">
-                      <h3 className="text-white text-xs font-semibold uppercase tracking-wider">Materials</h3>
-                      <p className="text-gray-200 text-xs md:text-sm">
-                        {product.materials}
-                      </p>
+                  {displayProduct.size && (
+                    <div>
+                      <span className="text-white/50">Size:</span>{' '}
+                      <span className="text-white">{displayProduct.size}</span>
+                    </div>
+                  )}
+                  {displayProduct.material && (
+                    <div>
+                      <span className="text-white/50">Material:</span>{' '}
+                      <span className="text-white">{displayProduct.material}</span>
+                    </div>
+                  )}
+                  {displayProduct.core_size && (
+                    <div>
+                      <span className="text-white/50">Core Size:</span>{' '}
+                      <span className="text-white">{displayProduct.core_size}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Actions Section - All in one line */}
-                <div className="flex items-center gap-3 pb-2">
+                {/* Description */}
+                {displayProduct.description && (
+                  <div className="space-y-1">
+                    <p className="text-gray-300 text-xs md:text-sm leading-relaxed line-clamp-3">
+                      {displayProduct.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Variants Section */}
+                {variants && variants.length > 1 && (
+                  <div className="space-y-2">
+                    <h3 className="text-white text-xs font-semibold uppercase tracking-wider">
+                      Available Options ({variants.length})
+                    </h3>
+                    <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto">
+                      {variants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedVariant(variant.id === displayProduct.id ? null : variant)
+                          }}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all",
+                            variant.id === displayProduct.id
+                              ? "bg-white text-black"
+                              : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                          )}
+                        >
+                          {variant.colour_hex && (
+                            <span
+                              className="w-3 h-3 rounded-full border border-white/30"
+                              style={{ backgroundColor: variant.colour_hex }}
+                            />
+                          )}
+                          <span>{variant.colour_name || variant.size || `Variant ${variant.id}`}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions Section */}
+                <div className="flex items-center gap-2 mt-auto pt-2">
                   {/* Quantity Selector */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-xs font-semibold uppercase tracking-wider whitespace-nowrap">Quantity</span>
-                    <ButtonGroup onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        disabled={quantity === 1}
-                        onClick={() => handleQuantityChange(-1)}
-                        size="sm"
-                        variant="outline"
-                        className="h-10 w-10 rounded-l-lg rounded-r-none border-white/20 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm disabled:opacity-50"
-                      >
-                        <Minus className="w-3.5 h-3.5" />
-                      </Button>
-                      <ButtonGroupText className="h-10 min-w-14">
-                        {quantity}
-                      </ButtonGroupText>
-                      <Button
-                        onClick={() => handleQuantityChange(1)}
-                        size="sm"
-                        variant="outline"
-                        className="h-10 w-10 rounded-r-lg rounded-l-none border-white/20 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </Button>
-                    </ButtonGroup>
-                  </div>
+                  <ButtonGroup onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      disabled={quantity === 1}
+                      onClick={() => handleQuantityChange(-1)}
+                      size="sm"
+                      variant="outline"
+                      className="h-9 w-9 rounded-l-lg rounded-r-none border-white/20 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm disabled:opacity-50"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <ButtonGroupText className="h-9 min-w-10 text-sm">
+                      {quantity}
+                    </ButtonGroupText>
+                    <Button
+                      onClick={() => handleQuantityChange(1)}
+                      size="sm"
+                      variant="outline"
+                      className="h-9 w-9 rounded-r-lg rounded-l-none border-white/20 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </ButtonGroup>
 
-                  {/* Action Buttons */}
+                  {/* Add to Cart Button */}
                   <Button
                     className={cn(
-                      "flex-1 rounded-full h-10 text-xs font-semibold transition-all",
+                      "flex-1 rounded-full h-9 text-xs font-semibold transition-all",
                       justAdded
                         ? "bg-emerald-500 text-white hover:bg-emerald-600"
                         : inCart
@@ -286,53 +352,56 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
                   >
                     {justAdded ? (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className="w-3.5 h-3.5 mr-1.5" />
                         Added!
                       </>
                     ) : inCart ? (
                       <>
-                        <ShoppingBag className="w-4 h-4 mr-2" />
-                        In Cart ({cartItem?.quantity}) - Add More
+                        <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
+                        In Cart ({cartItem?.quantity})
                       </>
                     ) : (
                       <>
-                        <ShoppingBag className="w-4 h-4 mr-2" />
+                        <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
                         Add to Cart
                       </>
                     )}
                   </Button>
+
                   <button
                     onClick={handleWishlistClick}
                     className={cn(
-                      'w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-sm flex-shrink-0',
+                      'w-9 h-9 rounded-full flex items-center justify-center transition-all backdrop-blur-sm flex-shrink-0',
                       isWishlisted
                         ? 'bg-red-500 hover:bg-red-600'
                         : 'bg-white/20 hover:bg-white/30'
                     )}
                     aria-label="Add to wishlist"
                   >
-                    <Heart className={cn('w-5 h-5 text-white', isWishlisted && 'fill-current')} />
+                    <Heart className={cn('w-4 h-4 text-white', isWishlisted && 'fill-current')} />
                   </button>
+
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      navigate(`/products/${product.id}`)
+                      navigate(`/products/${displayProduct.id}`)
                     }}
-                    className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all backdrop-blur-sm flex-shrink-0"
+                    className="h-9 px-3 rounded-full bg-white/20 hover:bg-white/30 flex items-center gap-1.5 transition-all backdrop-blur-sm flex-shrink-0"
                     aria-label="View full details"
                   >
-                    <Eye className="w-5 h-5 text-white" />
+                    <span className="text-white text-xs font-medium">View</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-white" />
                   </button>
                 </div>
               </div>
 
               {/* Right Section - Image Gallery */}
-              <div className="md:w-64 flex-shrink-0 md:mt-12">
+              <div className="md:w-56 flex-shrink-0">
                 <div className="space-y-2">
-                  <h3 className="text-white text-xs font-semibold uppercase tracking-wider mb-3">Product Images</h3>
+                  <h3 className="text-white text-xs font-semibold uppercase tracking-wider">Images</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    {product.gallery && product.gallery.length > 0 ? (
-                      product.gallery.map((image, index) => (
+                    {galleryImages.length > 0 ? (
+                      galleryImages.slice(0, 4).map((image, index) => (
                         <button
                           key={index}
                           onClick={(e) => {
@@ -343,23 +412,32 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [
                         >
                           <img
                             src={image}
-                            alt={`${product.name} view ${index + 1}`}
+                            alt={`${displayProduct.name} view ${index + 1}`}
                             className="w-full h-full object-cover"
                           />
                         </button>
                       ))
                     ) : (
-                      // Placeholder thumbnails when no gallery images
-                      <>
-                        {[...Array(4)].map((_, index) => (
-                          <div
-                            key={index}
-                            className="aspect-square rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center"
-                          >
-                            <Eye className="w-6 h-6 text-white/40" />
-                          </div>
-                        ))}
-                      </>
+                      // Show main product image if no gallery
+                      currentImageUrl ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedImage(currentImageUrl)
+                          }}
+                          className="aspect-square rounded-lg overflow-hidden bg-white/10 hover:bg-white/20 transition-all backdrop-blur-sm border border-white/20 hover:border-white/40 col-span-2"
+                        >
+                          <img
+                            src={currentImageUrl}
+                            alt={displayProduct.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ) : (
+                        <div className="aspect-square rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center col-span-2">
+                          <Eye className="w-8 h-8 text-white/40" />
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
