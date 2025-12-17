@@ -284,7 +284,7 @@ export async function handler(event) {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ customer: customers[0], contacts })
+        body: JSON.stringify({ success: true, customer: customers[0], contacts })
       }
     }
 

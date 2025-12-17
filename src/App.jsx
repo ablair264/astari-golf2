@@ -13,6 +13,7 @@ import AdminBrands from '@/pages/AdminBrands'
 import AdminMargins from '@/pages/AdminMargins'
 import AdminLogin from '@/pages/AdminLogin'
 import AdminCustomers from '@/pages/AdminCustomers'
+import AdminCustomerDetail from '@/pages/AdminCustomerDetail'
 import AdminCustomerMap from '@/pages/AdminCustomerMap'
 import AdminLiveChat from '@/pages/AdminLiveChat'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
@@ -381,6 +382,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminCustomers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/customers/:id"
+            element={
+              <ProtectedRoute>
+                <AdminCustomerDetail />
               </ProtectedRoute>
             }
           />
