@@ -122,14 +122,14 @@ const CheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1f26] to-[#252a32]">
 
       {/* Header */}
       <header ref={headerRef} className="relative z-10 py-8 px-4 md:px-8 lg:px-16 xl:px-24">
         <div className="max-w-[1400px] mx-auto">
           <button
             onClick={() => navigate(-1)}
-            className="group flex items-center gap-2 text-gray-600 hover:text-emerald-600 transition-colors duration-300 mb-8"
+            className="group flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors duration-300 mb-8"
           >
             <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
             <span className="font-medium">Back to Cart</span>
@@ -137,13 +137,13 @@ const CheckoutPage = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm font-semibold tracking-[0.3em] uppercase text-gray-500 mb-4 block">
+              <span className="text-sm font-semibold tracking-[0.3em] uppercase text-emerald-400 mb-4 block">
                 Secure Checkout
               </span>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight leading-[1.1]">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.1]">
                 Checkout
               </h1>
-              <p className="text-gray-600 mt-4">
+              <p className="text-gray-400 mt-4">
                 Complete your order in {3 - currentStep + 1} simple step{3 - currentStep + 1 > 1 ? 's' : ''}
               </p>
             </div>
@@ -157,7 +157,7 @@ const CheckoutPage = () => {
                       className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
                         currentStep >= step.id
                           ? 'bg-gradient-to-br from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/30'
-                          : 'bg-white border-2 border-stone-300'
+                          : 'bg-white/10 border-2 border-white/20'
                       }`}
                       initial={false}
                       animate={{
@@ -167,7 +167,7 @@ const CheckoutPage = () => {
                       {currentStep > step.id ? (
                         <CheckCircle2 className="w-6 h-6 text-white" />
                       ) : (
-                        <step.icon className={`w-5 h-5 ${currentStep >= step.id ? 'text-white' : 'text-stone-400'}`} />
+                        <step.icon className={`w-5 h-5 ${currentStep >= step.id ? 'text-white' : 'text-white/50'}`} />
                       )}
                     </motion.div>
 
@@ -183,7 +183,7 @@ const CheckoutPage = () => {
                   </div>
 
                   {index < STEPS.length - 1 && (
-                    <div className="w-16 h-0.5 mx-2 bg-stone-300 relative overflow-hidden">
+                    <div className="w-16 h-0.5 mx-2 bg-white/20 relative overflow-hidden">
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600"
                         initial={{ scaleX: 0 }}
@@ -206,126 +206,126 @@ const CheckoutPage = () => {
           {/* Form Section */}
           <motion.div
             ref={formRef}
-            className="bg-white rounded-2xl border border-gray-200 p-8 md:p-10"
+            className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-10"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
               Delivery Details
             </h2>
 
             <div className="space-y-6">
               {/* Contact Information */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold tracking-[0.2em] uppercase text-gray-500">
+                <h3 className="text-sm font-semibold tracking-[0.2em] uppercase text-emerald-400">
                   Contact Information
                 </h3>
 
                 <div>
-                  <Label htmlFor="name" className="text-gray-700">Full Name</Label>
+                  <Label htmlFor="name" className="text-gray-300">Full Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`mt-1.5 ${errors.name ? 'border-red-500' : ''}`}
+                    className={`mt-1.5 bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 ${errors.name ? 'border-red-500' : ''}`}
                     placeholder="John Smith"
                   />
-                  {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
+                  {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name}</p>}
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="email" className="text-gray-700">Email</Label>
+                    <Label htmlFor="email" className="text-gray-300">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`mt-1.5 ${errors.email ? 'border-red-500' : ''}`}
+                      className={`mt-1.5 bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 ${errors.email ? 'border-red-500' : ''}`}
                       placeholder="john@example.com"
                     />
-                    {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+                    {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email}</p>}
                   </div>
 
                   <div>
-                    <Label htmlFor="phone" className="text-gray-700">Phone</Label>
+                    <Label htmlFor="phone" className="text-gray-300">Phone</Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className={`mt-1.5 ${errors.phone ? 'border-red-500' : ''}`}
+                      className={`mt-1.5 bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 ${errors.phone ? 'border-red-500' : ''}`}
                       placeholder="07XXX XXXXXX"
                     />
-                    {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
+                    {errors.phone && <p className="text-xs text-red-400 mt-1">{errors.phone}</p>}
                   </div>
                 </div>
               </div>
 
-              <Separator className="my-8" />
+              <Separator className="my-8 bg-white/10" />
 
               {/* Delivery Address */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold tracking-[0.2em] uppercase text-gray-500">
+                <h3 className="text-sm font-semibold tracking-[0.2em] uppercase text-emerald-400">
                   Delivery Address
                 </h3>
 
                 <div>
-                  <Label htmlFor="addressLine1" className="text-gray-700">Address Line 1</Label>
+                  <Label htmlFor="addressLine1" className="text-gray-300">Address Line 1</Label>
                   <Input
                     id="addressLine1"
                     value={formData.address.line1}
                     onChange={(e) => handleInputChange('address.line1', e.target.value)}
-                    className={`mt-1.5 ${errors.addressLine1 ? 'border-red-500' : ''}`}
+                    className={`mt-1.5 bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 ${errors.addressLine1 ? 'border-red-500' : ''}`}
                     placeholder="123 Golf Course Road"
                   />
-                  {errors.addressLine1 && <p className="text-xs text-red-600 mt-1">{errors.addressLine1}</p>}
+                  {errors.addressLine1 && <p className="text-xs text-red-400 mt-1">{errors.addressLine1}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="addressLine2" className="text-gray-700">
-                    Address Line 2 <span className="text-gray-400">(Optional)</span>
+                  <Label htmlFor="addressLine2" className="text-gray-300">
+                    Address Line 2 <span className="text-gray-500">(Optional)</span>
                   </Label>
                   <Input
                     id="addressLine2"
                     value={formData.address.line2}
                     onChange={(e) => handleInputChange('address.line2', e.target.value)}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20"
                     placeholder="Apartment, suite, etc."
                   />
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="city" className="text-gray-700">City</Label>
+                    <Label htmlFor="city" className="text-gray-300">City</Label>
                     <Input
                       id="city"
                       value={formData.address.city}
                       onChange={(e) => handleInputChange('address.city', e.target.value)}
-                      className={`mt-1.5 ${errors.city ? 'border-red-500' : ''}`}
+                      className={`mt-1.5 bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 ${errors.city ? 'border-red-500' : ''}`}
                       placeholder="London"
                     />
-                    {errors.city && <p className="text-xs text-red-600 mt-1">{errors.city}</p>}
+                    {errors.city && <p className="text-xs text-red-400 mt-1">{errors.city}</p>}
                   </div>
 
                   <div>
-                    <Label htmlFor="postcode" className="text-gray-700">Postcode</Label>
+                    <Label htmlFor="postcode" className="text-gray-300">Postcode</Label>
                     <Input
                       id="postcode"
                       value={formData.address.postcode}
                       onChange={(e) => handleInputChange('address.postcode', e.target.value)}
-                      className={`mt-1.5 ${errors.postcode ? 'border-red-500' : ''}`}
+                      className={`mt-1.5 bg-white/5 border-white/20 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-emerald-500/20 ${errors.postcode ? 'border-red-500' : ''}`}
                       placeholder="SW1A 1AA"
                     />
-                    {errors.postcode && <p className="text-xs text-red-600 mt-1">{errors.postcode}</p>}
+                    {errors.postcode && <p className="text-xs text-red-400 mt-1">{errors.postcode}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="country" className="text-gray-700">Country</Label>
+                  <Label htmlFor="country" className="text-gray-300">Country</Label>
                   <Input
                     id="country"
                     value={formData.address.country}
                     onChange={(e) => handleInputChange('address.country', e.target.value)}
-                    className="mt-1.5 bg-gray-50"
+                    className="mt-1.5 bg-white/10 border-white/20 text-gray-400 cursor-not-allowed"
                     disabled
                   />
                 </div>
@@ -334,7 +334,7 @@ const CheckoutPage = () => {
               {/* Continue Button */}
               <Button
                 onClick={handleContinueToPayment}
-                className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-semibold transition-all duration-300 mt-8"
+                className="w-full h-14 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-lg font-semibold transition-all duration-300 mt-8"
               >
                 Continue to Payment
                 <ChevronRight className="ml-2 w-5 h-5" />
