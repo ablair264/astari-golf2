@@ -27,9 +27,9 @@ export const ColorSelector = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className="text-sm font-medium text-white/70">{label}</label>
         {selectedVariant?.colour_name && (
-          <span className="text-sm text-gray-500">{selectedVariant.colour_name}</span>
+          <span className="text-sm text-white/50">{selectedVariant.colour_name}</span>
         )}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -42,8 +42,8 @@ export const ColorSelector = ({
               className={cn(
                 'relative w-10 h-10 rounded-full border-2 transition-all',
                 isSelected
-                  ? 'border-gray-900 ring-2 ring-gray-900/20'
-                  : 'border-gray-200 hover:border-gray-400'
+                  ? 'border-emerald-500 ring-2 ring-emerald-500/30'
+                  : 'border-white/20 hover:border-white/40'
               )}
               title={variant.colour_name}
             >
@@ -53,7 +53,7 @@ export const ColorSelector = ({
               />
               {isSelected && (
                 <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="w-2.5 h-2.5 rounded-full bg-white border border-gray-300" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white border border-white/30" />
                 </span>
               )}
             </button>
@@ -79,7 +79,7 @@ export const SizeSelector = ({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-white/70">{label}</label>
       <div className="flex flex-wrap gap-2">
         {sizeVariants.map((variant) => {
           const sizeValue = variant[sizeAttribute]
@@ -94,10 +94,10 @@ export const SizeSelector = ({
               className={cn(
                 'min-w-[3rem] px-4 py-2.5 rounded-lg border text-sm font-medium transition-all',
                 isSelected
-                  ? 'border-gray-900 bg-gray-900 text-white'
+                  ? 'border-emerald-500 bg-emerald-500 text-black'
                   : isOutOfStock
-                    ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
-                    : 'border-gray-200 text-gray-700 hover:border-gray-400'
+                    ? 'border-white/10 bg-white/5 text-white/30 cursor-not-allowed'
+                    : 'border-white/20 text-white/70 hover:border-white/40'
               )}
             >
               {sizeValue}
@@ -124,8 +124,8 @@ export const CoreSizeSelector = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
-        <span className="text-xs text-gray-400">(shaft diameter)</span>
+        <label className="text-sm font-medium text-white/70">{label}</label>
+        <span className="text-xs text-white/40">(shaft diameter)</span>
       </div>
       <div className="flex flex-wrap gap-2">
         {coreVariants.map((variant) => {
@@ -140,10 +140,10 @@ export const CoreSizeSelector = ({
               className={cn(
                 'px-4 py-2.5 rounded-lg border text-sm font-medium transition-all',
                 isSelected
-                  ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                  ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400'
                   : isOutOfStock
-                    ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
-                    : 'border-gray-200 text-gray-700 hover:border-gray-400'
+                    ? 'border-white/10 bg-white/5 text-white/30 cursor-not-allowed'
+                    : 'border-white/20 text-white/70 hover:border-white/40'
               )}
             >
               {variant.core_size}"

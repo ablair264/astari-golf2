@@ -129,13 +129,13 @@ const ProductDetailsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#0a0e14]">
         <Navbar />
         <div className="container mx-auto px-4 pt-32 pb-16">
           <div className="flex items-center justify-center h-96">
             <div className="animate-pulse flex flex-col items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gray-200" />
-              <div className="text-gray-500">Loading product...</div>
+              <div className="w-16 h-16 rounded-full bg-white/10" />
+              <div className="text-white/50">Loading product...</div>
             </div>
           </div>
         </div>
@@ -145,13 +145,13 @@ const ProductDetailsPage = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#0a0e14]">
         <Navbar />
         <div className="container mx-auto px-4 pt-32 pb-16">
           <div className="flex flex-col items-center justify-center h-96">
-            <h1 className="text-gray-900 text-2xl font-bold mb-4">Product Not Found</h1>
-            <p className="text-gray-600 mb-6">The product you're looking for doesn't exist.</p>
-            <Button onClick={() => navigate('/products')}>Browse Products</Button>
+            <h1 className="text-white text-2xl font-bold mb-4">Product Not Found</h1>
+            <p className="text-white/60 mb-6">The product you're looking for doesn't exist.</p>
+            <Button onClick={() => navigate('/products')} className="bg-emerald-500 hover:bg-emerald-400 text-black">Browse Products</Button>
           </div>
         </div>
       </div>
@@ -161,7 +161,7 @@ const ProductDetailsPage = () => {
   const galleryImages = getGalleryImages(displayProduct)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0a0e14]">
       <Navbar />
 
       {/* Main Content */}
@@ -169,26 +169,26 @@ const ProductDetailsPage = () => {
         {/* Breadcrumb */}
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center gap-2 text-sm">
-            <Link to="/" className="text-gray-500 hover:text-gray-900">
+            <Link to="/" className="text-white/50 hover:text-white transition-colors">
               Home
             </Link>
-            <span className="text-gray-300">/</span>
-            <Link to="/products" className="text-gray-500 hover:text-gray-900">
+            <span className="text-white/30">/</span>
+            <Link to="/products" className="text-white/50 hover:text-white transition-colors">
               Products
             </Link>
             {displayProduct.category_name && (
               <>
-                <span className="text-gray-300">/</span>
+                <span className="text-white/30">/</span>
                 <Link
                   to={`/products?category=${displayProduct.category_id}`}
-                  className="text-gray-500 hover:text-gray-900"
+                  className="text-white/50 hover:text-white transition-colors"
                 >
                   {displayProduct.category_name}
                 </Link>
               </>
             )}
-            <span className="text-gray-300">/</span>
-            <span className="text-gray-900 font-medium truncate max-w-[200px]">
+            <span className="text-white/30">/</span>
+            <span className="text-white font-medium truncate max-w-[200px]">
               {displayProduct.name}
             </span>
           </nav>
@@ -215,14 +215,14 @@ const ProductDetailsPage = () => {
                   />
                 )}
                 {displayProduct.brand_name && (
-                  <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  <span className="text-sm font-medium text-emerald-400 uppercase tracking-wider">
                     {displayProduct.brand_name}
                   </span>
                 )}
               </div>
 
               {/* Product Name */}
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight">
                 {displayProduct.name}
               </h1>
 
@@ -234,25 +234,25 @@ const ProductDetailsPage = () => {
                       key={star}
                       className={cn(
                         'w-4 h-4',
-                        star <= 4 ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'
+                        star <= 4 ? 'fill-yellow-400 text-yellow-400' : 'fill-white/20 text-white/20'
                       )}
                     />
                   ))}
                 </div>
-                <span className="text-sm text-gray-600">4.0 (24 reviews)</span>
+                <span className="text-sm text-white/60">4.0 (24 reviews)</span>
               </div>
 
               {/* Price */}
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-gray-900">
+                <span className="text-3xl font-bold text-emerald-400">
                   {cartUtils.formatPrice(price)}
                 </span>
                 {originalPrice && (
                   <>
-                    <span className="text-xl text-gray-400 line-through">
+                    <span className="text-xl text-white/40 line-through">
                       {cartUtils.formatPrice(originalPrice)}
                     </span>
-                    <span className="px-2.5 py-1 text-sm font-semibold bg-red-100 text-red-700 rounded-full">
+                    <span className="px-2.5 py-1 text-sm font-semibold bg-red-500/20 text-red-400 rounded-full">
                       -{discount}%
                     </span>
                   </>
@@ -271,7 +271,7 @@ const ProductDetailsPage = () => {
                   <span
                     className={cn(
                       'text-sm font-medium',
-                      displayProduct.stock_quantity > 0 ? 'text-emerald-700' : 'text-red-700'
+                      displayProduct.stock_quantity > 0 ? 'text-emerald-400' : 'text-red-400'
                     )}
                   >
                     {displayProduct.stock_quantity > 0
@@ -285,7 +285,7 @@ const ProductDetailsPage = () => {
 
               {/* Variant Selectors */}
               {variants.length > 1 && (
-                <div className="py-4 border-y border-gray-200">
+                <div className="py-4 border-y border-white/10">
                   <VariantSelector
                     variants={variants}
                     selectedVariant={selectedVariant || product}
@@ -296,22 +296,22 @@ const ProductDetailsPage = () => {
 
               {/* Quantity Selector */}
               <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-700">Quantity</label>
+                <label className="text-sm font-medium text-white/70">Quantity</label>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center border border-gray-200 rounded-lg">
+                  <div className="flex items-center border border-white/20 rounded-lg bg-white/5">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       disabled={quantity <= 1}
-                      className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-lg"
+                      className="w-10 h-10 flex items-center justify-center text-white/60 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-lg transition-colors"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-12 h-10 flex items-center justify-center text-gray-900 font-medium border-x border-gray-200">
+                    <span className="w-12 h-10 flex items-center justify-center text-white font-medium border-x border-white/20">
                       {quantity}
                     </span>
                     <button
                       onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-r-lg"
+                      className="w-10 h-10 flex items-center justify-center text-white/60 hover:bg-white/10 rounded-r-lg transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -327,10 +327,10 @@ const ProductDetailsPage = () => {
                   className={cn(
                     'flex-1 h-12 text-base font-semibold rounded-xl transition-all',
                     addedToCart
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
                       : inCart
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                        : 'bg-gray-900 hover:bg-gray-800 text-white'
+                        ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
+                        : 'bg-emerald-500 hover:bg-emerald-400 text-black'
                   )}
                 >
                   {addedToCart ? (
@@ -355,7 +355,7 @@ const ProductDetailsPage = () => {
                   onClick={handleBuyNow}
                   disabled={displayProduct.stock_quantity === 0}
                   variant="outline"
-                  className="flex-1 h-12 text-base font-semibold rounded-xl border-gray-300 text-gray-900 hover:bg-gray-50"
+                  className="flex-1 h-12 text-base font-semibold rounded-xl border-white/20 text-white hover:bg-white/10 bg-transparent"
                 >
                   Buy Now
                 </Button>
@@ -364,10 +364,10 @@ const ProductDetailsPage = () => {
                   onClick={handleWishlistToggle}
                   variant="outline"
                   className={cn(
-                    'h-12 w-12 rounded-xl border-gray-300',
+                    'h-12 w-12 rounded-xl border-white/20 bg-transparent',
                     isWishlisted
-                      ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30'
+                      : 'text-white/60 hover:bg-white/10'
                   )}
                 >
                   <Heart className={cn('w-5 h-5', isWishlisted && 'fill-current')} />
@@ -375,21 +375,21 @@ const ProductDetailsPage = () => {
               </div>
 
               {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
                 <div className="flex flex-col items-center text-center">
-                  <Truck className="w-5 h-5 text-emerald-600 mb-1.5" />
-                  <span className="text-xs text-gray-600">Free Shipping</span>
-                  <span className="text-xs text-gray-400">over £50</span>
+                  <Truck className="w-5 h-5 text-emerald-400 mb-1.5" />
+                  <span className="text-xs text-white/70">Free Shipping</span>
+                  <span className="text-xs text-white/40">over £50</span>
                 </div>
                 <div className="flex flex-col items-center text-center">
-                  <RotateCcw className="w-5 h-5 text-emerald-600 mb-1.5" />
-                  <span className="text-xs text-gray-600">Easy Returns</span>
-                  <span className="text-xs text-gray-400">30-day policy</span>
+                  <RotateCcw className="w-5 h-5 text-emerald-400 mb-1.5" />
+                  <span className="text-xs text-white/70">Easy Returns</span>
+                  <span className="text-xs text-white/40">30-day policy</span>
                 </div>
                 <div className="flex flex-col items-center text-center">
-                  <Shield className="w-5 h-5 text-emerald-600 mb-1.5" />
-                  <span className="text-xs text-gray-600">Secure Payment</span>
-                  <span className="text-xs text-gray-400">SSL encrypted</span>
+                  <Shield className="w-5 h-5 text-emerald-400 mb-1.5" />
+                  <span className="text-xs text-white/70">Secure Payment</span>
+                  <span className="text-xs text-white/40">SSL encrypted</span>
                 </div>
               </div>
             </div>
@@ -403,9 +403,9 @@ const ProductDetailsPage = () => {
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="bg-gray-50 py-16">
+          <div className="bg-[#0f1318] py-16 border-t border-white/5">
             <div className="container mx-auto px-4">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">You May Also Like</h2>
+              <h2 className="text-2xl font-bold text-white mb-8">You May Also Like</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {relatedProducts.map((relatedProduct) => (
                   <div

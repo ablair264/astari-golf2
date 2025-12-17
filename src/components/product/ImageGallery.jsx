@@ -29,7 +29,7 @@ const ImageGallery = ({ images = [], productName = 'Product' }) => {
     <div className="space-y-4">
       {/* Main Image */}
       <div
-        className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 cursor-zoom-in group"
+        className="relative aspect-square rounded-2xl overflow-hidden bg-white/5 cursor-zoom-in group"
         onClick={() => setIsLightboxOpen(true)}
       >
         <img
@@ -39,8 +39,8 @@ const ImageGallery = ({ images = [], productName = 'Product' }) => {
         />
 
         {/* Zoom indicator */}
-        <div className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-          <ZoomIn className="w-5 h-5 text-gray-700" />
+        <div className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <ZoomIn className="w-5 h-5 text-white" />
         </div>
 
         {/* Navigation arrows for main image */}
@@ -51,18 +51,18 @@ const ImageGallery = ({ images = [], productName = 'Product' }) => {
                 e.stopPropagation()
                 handlePrevious()
               }}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
+              <ChevronLeft className="w-5 h-5 text-white" />
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 handleNext()
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <ChevronRight className="w-5 h-5 text-gray-700" />
+              <ChevronRight className="w-5 h-5 text-white" />
             </button>
           </>
         )}
@@ -79,7 +79,7 @@ const ImageGallery = ({ images = [], productName = 'Product' }) => {
                 'flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all',
                 selectedIndex === index
                   ? 'border-emerald-500 ring-2 ring-emerald-500/30'
-                  : 'border-transparent hover:border-gray-300'
+                  : 'border-white/10 hover:border-white/30'
               )}
             >
               <img
