@@ -17,8 +17,8 @@ export default function AdminMargins() {
             </p>
           </div>
 
-          {/* Product Manager Layout with Rules Panel */}
-          <ProductManagerLayout />
+          {/* Product Manager Layout with Rules Panel - Margin Mode */}
+          <ProductManagerLayout pageMode="margins" />
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -19,6 +19,7 @@ import AdminLiveChat from '@/pages/AdminLiveChat'
 import AdminOrders from '@/pages/AdminOrders'
 import AdminOrderDetail from '@/pages/AdminOrderDetail'
 import AdminInventory from '@/pages/AdminInventory'
+import AdminCategories from '@/pages/AdminCategories'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext'
 import { CustomerAuthProvider } from '@/contexts/CustomerAuthContext'
@@ -435,6 +436,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminInventory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              <ProtectedRoute>
+                <AdminCategories />
               </ProtectedRoute>
             }
           />

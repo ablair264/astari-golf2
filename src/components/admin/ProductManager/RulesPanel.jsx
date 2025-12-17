@@ -5,6 +5,7 @@ import RuleEditModal from '../products/modals/RuleEditModal'
 import ApplyRuleModal from '../products/modals/ApplyRuleModal'
 import SpecialOfferModal from '../products/modals/SpecialOfferModal'
 import { RuleCard } from './RuleCard'
+import { OfferCard } from './OfferCard'
 
 const API_RULES = '/.netlify/functions/margin-rules'
 const API_OFFERS = '/.netlify/functions/special-offers'
@@ -43,7 +44,9 @@ export function RulesPanel({ onClose }) {
   const [editRule, setEditRule] = useState(null)
   const [applyRule, setApplyRule] = useState(null)
   const [showOffer, setShowOffer] = useState(false)
+  const [editOffer, setEditOffer] = useState(null)
   const [expandedRuleId, setExpandedRuleId] = useState(null)
+  const [expandedOfferId, setExpandedOfferId] = useState(null)
 
   const load = async () => {
     try {
@@ -104,10 +107,29 @@ export function RulesPanel({ onClose }) {
     }
   }
 
-  const handleOffer = async (payload) => {
-    const res = await fetchJSON(API_OFFERS, { method: 'POST', body: JSON.stringify(payload) })
-    setOffers((prev) => [res.offer, ...prev])
-    setShowOffer(false)
+  const handleOffer = async (payload, offerId) => {
+    if (offerId) {
+      // Update existing offer
+      const res = await fetchJSON(`${API_OFFERS}/${offerId}`, { method: 'PUT', body: JSON.stringify(payload) })
+      setOffers((prev) => prev.map((o) => (o.id === offerId ? res.offer : o)))
+      setEditOffer(null)
+    } else {
+      // Create new offer
+      const res = await fetchJSON(API_OFFERS, { method: 'POST', body: JSON.stringify(payload) })
+      setOffers((prev) => [res.offer, ...prev])
+      setShowOffer(false)
+    }
+  }
+
+  const handleDeleteOffer = async (id) => {
+    if (!confirm('Delete this offer?')) return
+    await fetchJSON(`${API_OFFERS}/${id}`, { method: 'DELETE' })
+    setOffers((prev) => prev.filter((o) => o.id !== id))
+  }
+
+  const handleApplyOffer = async (offer) => {
+    // For now, just show a confirmation - offers typically auto-apply
+    alert(`Offer "${offer.name}" with ${offer.discount_percentage}% discount is active.`)
   }
 
   // Group rules by priority
@@ -221,27 +243,21 @@ export function RulesPanel({ onClose }) {
                 Special Offers
               </div>
               <div className="flex-1 h-px bg-white/10" />
+              <div className="text-xs text-white/30">
+                {offers.length} active
+              </div>
             </div>
             <div className="space-y-2">
               {offers.map((offer) => (
-                <div key={offer.id} className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                      <Tag className="w-4 h-4 text-amber-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white">{offer.name}</span>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 text-xs">
-                          -{offer.discount_percentage}%
-                        </span>
-                      </div>
-                      {offer.description && (
-                        <p className="text-xs text-white/50 mt-0.5">{offer.description}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <OfferCard
+                  key={offer.id}
+                  offer={offer}
+                  expanded={expandedOfferId === offer.id}
+                  onToggleExpand={(expanded) => setExpandedOfferId(expanded ? offer.id : null)}
+                  onEdit={setEditOffer}
+                  onDelete={handleDeleteOffer}
+                  onApply={handleApplyOffer}
+                />
               ))}
             </div>
           </div>
@@ -271,6 +287,9 @@ export function RulesPanel({ onClose }) {
       )}
       {showOffer && (
         <SpecialOfferModal open onClose={() => setShowOffer(false)} onSave={handleOffer} />
+      )}
+      {editOffer && (
+        <SpecialOfferModal open offer={editOffer} onClose={() => setEditOffer(null)} onSave={handleOffer} />
       )}
     </div>
   )

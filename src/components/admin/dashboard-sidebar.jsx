@@ -73,17 +73,21 @@ export const dashboardRoutes = [
         link: "/admin/inventory",
       },
       {
+        title: "Brands",
+        icon: <Tags className="size-3" />,
+        link: "/admin/brands",
+      },
+      {
+        title: "Categories",
+        icon: <List className="size-3" />,
+        link: "/admin/categories",
+      },
+      {
         title: "Margin Manager",
         icon: <Percent className="size-3" />,
         link: "/admin/margins",
       },
     ],
-  },
-  {
-    id: "brands",
-    title: "Brands",
-    icon: <Tags className="size-4" />,
-    link: "/admin/brands",
   },
   {
     id: "customers",

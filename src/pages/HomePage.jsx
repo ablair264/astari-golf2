@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import BrandLogosCarousel from '@/components/home/BrandLogosCarousel'
 import ProductCarousel from '@/components/ProductCarousel'
+import FeaturedProducts from '@/components/home/FeaturedProducts'
 import CategoryShowcase from '@/components/home/CategoryShowcase'
 import GripFinderCTA from '@/components/home/GripFinderCTA'
 import BentoGrid from '@/components/BentoGrid'
@@ -82,8 +83,8 @@ const HomePage = () => {
       {/* Features Section */}
       <Features />
 
-      {/* Second Product Carousel - Different Category */}
-      {!loading && <ProductCarousel products={products} title="Best Sellers" />}
+      {/* Featured Products Grid */}
+      {!loading && <FeaturedProducts products={products} title="Best Sellers" />}
 
       {/* Testimonials Section */}
       <Testimonials />

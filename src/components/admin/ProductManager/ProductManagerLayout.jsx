@@ -178,9 +178,9 @@ function ProductManagerContent() {
   )
 }
 
-export function ProductManagerLayout() {
+export function ProductManagerLayout({ pageMode = 'products' }) {
   return (
-    <DrillDownProvider>
+    <DrillDownProvider pageMode={pageMode}>
       <ProductManagerContent />
     </DrillDownProvider>
   )

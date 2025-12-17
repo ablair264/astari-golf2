@@ -13,7 +13,8 @@ export function useDrillDown() {
   return context
 }
 
-export function DrillDownProvider({ children }) {
+export function DrillDownProvider({ children, pageMode = 'products' }) {
+  // Page mode: 'products' for product management, 'margins' for margin/rule management
   // View mode determines the starting view
   const [viewMode, setViewModeState] = useState('by-brand') // 'by-brand' | 'by-type' | 'by-style' | 'all'
 
@@ -121,6 +122,7 @@ export function DrillDownProvider({ children }) {
   }, [])
 
   const value = {
+    pageMode,
     currentView,
     breadcrumbs,
     activeBrand,

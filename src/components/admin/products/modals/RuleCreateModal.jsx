@@ -93,8 +93,10 @@ export default function RuleCreateModal({ open, onClose, onSave }) {
         style_no: form.style_no ? Number(form.style_no) : null,
         sku: form.sku || null,
       }
-      await fetchJSON(API_RULES, { method: 'POST', body: JSON.stringify(payload) })
-      onSave ? onSave(payload) : null
+      // Pass payload to parent - parent handles the API call
+      if (onSave) {
+        await onSave(payload)
+      }
       onClose()
     } catch (err) {
       setError(err.message)

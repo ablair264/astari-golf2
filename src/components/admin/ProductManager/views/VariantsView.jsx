@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useDrillDown } from '../DrillDownContext'
-import { Check, Minus, Edit2, Package } from 'lucide-react'
+import { Check, Minus, Edit2, Package, Percent } from 'lucide-react'
 import { ProductFormModal } from './Modals/ProductFormModal'
+import SkuRuleModal from '../../products/modals/SkuRuleModal'
 
 const API = '/.netlify/functions/products-admin/variants'
 
 export function VariantsView() {
-  const { toggleSkuSelection, selectedSkus, activeBrand, activeProductType, activeStyleCode, searchQuery } = useDrillDown()
+  const { toggleSkuSelection, selectedSkus, activeBrand, activeProductType, activeStyleCode, searchQuery, pageMode } = useDrillDown()
   const [editVariant, setEditVariant] = useState(null)
+  const [ruleVariant, setRuleVariant] = useState(null) // For margin mode
   const [brands, setBrands] = useState([])
   const [categories, setCategories] = useState([])
 
@@ -113,12 +115,20 @@ export function VariantsView() {
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setEditVariant(variant)
+                  if (pageMode === 'margins') {
+                    setRuleVariant(variant)
+                  } else {
+                    setEditVariant(variant)
+                  }
                 }}
                 className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                title="Edit variant"
+                title={pageMode === 'margins' ? 'Set margin rule' : 'Edit variant'}
               >
-                <Edit2 className="w-4 h-4" />
+                {pageMode === 'margins' ? (
+                  <Percent className="w-4 h-4" />
+                ) : (
+                  <Edit2 className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
@@ -130,19 +140,34 @@ export function VariantsView() {
         </div>
       )}
 
-      {/* Edit Variant Modal */}
-      <ProductFormModal
-        open={!!editVariant}
-        onClose={() => setEditVariant(null)}
-        product={editVariant}
-        brands={brands}
-        categories={categories}
-        mode="variant"
-        onSaved={() => {
-          setEditVariant(null)
-          fetchVariants(null, true)
-        }}
-      />
+      {/* Edit Variant Modal - Only in products mode */}
+      {pageMode === 'products' && (
+        <ProductFormModal
+          open={!!editVariant}
+          onClose={() => setEditVariant(null)}
+          product={editVariant}
+          brands={brands}
+          categories={categories}
+          mode="variant"
+          onSaved={() => {
+            setEditVariant(null)
+            fetchVariants(null, true)
+          }}
+        />
+      )}
+
+      {/* SKU Rule Modal - Only in margins mode */}
+      {pageMode === 'margins' && (
+        <SkuRuleModal
+          open={!!ruleVariant}
+          onClose={() => setRuleVariant(null)}
+          variant={ruleVariant}
+          onSaved={() => {
+            setRuleVariant(null)
+            fetchVariants(null, true)
+          }}
+        />
+      )}
     </div>
   )
 }
