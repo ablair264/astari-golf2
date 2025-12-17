@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Search, Filter, Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, X, Plus, Pencil } from 'lucide-react'
+import { Search, Filter, Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, X, Plus, Pencil, Upload } from 'lucide-react'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { DashboardSidebar } from '@/components/admin/dashboard-sidebar'
 import { ProductFormModal } from '@/components/admin/ProductManager/views/Modals/ProductFormModal'
+import ProductUploadModal from '@/components/admin/ProductUploadModal'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const API_BASE = '/.netlify/functions/products-admin'
@@ -42,6 +43,7 @@ export default function AdminProducts() {
   const [showModal, setShowModal] = useState(false)
   const [editProduct, setEditProduct] = useState(null)
   const [modalMode, setModalMode] = useState('create')
+  const [showUploadModal, setShowUploadModal] = useState(false)
 
   // Expanded styles
   const [expandedStyles, setExpandedStyles] = useState(new Set())
@@ -250,6 +252,12 @@ export default function AdminProducts() {
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
+              </button>
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-500/30 text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 transition-all"
+              >
+                <Upload className="w-4 h-4" /> Import Products
               </button>
               <button
                 onClick={handleCreate}
@@ -595,6 +603,16 @@ export default function AdminProducts() {
           categories={categories}
           mode={modalMode}
           onSaved={handleSaved}
+        />
+
+        {/* Product Upload Modal */}
+        <ProductUploadModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          onImportComplete={() => {
+            setShowUploadModal(false)
+            loadProducts(false)
+          }}
         />
       </SidebarInset>
     </SidebarProvider>
