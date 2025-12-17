@@ -604,6 +604,39 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, product: res[0] }) }
     }
 
+    // Bulk delete (deactivate) products by IDs
+    if (method === 'DELETE' && path === '/bulk') {
+      const { ids, permanent } = body
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Product IDs array required' }) }
+      }
+
+      // Limit to 100 at a time for safety
+      const idsToDelete = ids.slice(0, 100).map(id => Number(id)).filter(id => !isNaN(id))
+      if (idsToDelete.length === 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'No valid IDs provided' }) }
+      }
+
+      let result
+      if (permanent) {
+        // Hard delete - permanently remove from database
+        result = await sql`DELETE FROM products WHERE id = ANY(${idsToDelete}) RETURNING id`
+      } else {
+        // Soft delete - just deactivate
+        result = await sql`UPDATE products SET is_active = false, updated_at = NOW() WHERE id = ANY(${idsToDelete}) RETURNING id`
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          deletedCount: result.length,
+          deletedIds: result.map(r => r.id)
+        })
+      }
+    }
+
     // Soft delete (deactivate) by sku
     if (method === 'DELETE' && /^\/[A-Za-z0-9_-]+$/.test(path)) {
       const sku = path.substring(1)

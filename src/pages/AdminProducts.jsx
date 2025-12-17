@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Search, Filter, Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, X, Plus, Pencil, Upload } from 'lucide-react'
+import { Search, Filter, Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, X, Plus, Pencil, Upload, Trash2, AlertTriangle } from 'lucide-react'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { DashboardSidebar } from '@/components/admin/dashboard-sidebar'
 import { ProductFormModal } from '@/components/admin/ProductManager/views/Modals/ProductFormModal'
@@ -47,6 +47,11 @@ export default function AdminProducts() {
 
   // Expanded styles
   const [expandedStyles, setExpandedStyles] = useState(new Set())
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Load filter options
   useEffect(() => {
@@ -223,6 +228,84 @@ export default function AdminProducts() {
     return `£${Number(price).toFixed(2)}`
   }
 
+  // Selection handlers
+  const toggleSelectProduct = (id, e) => {
+    e?.stopPropagation()
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const toggleSelectStyle = (style, e) => {
+    e?.stopPropagation()
+    const variantIds = style.variants.map(v => v.id)
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      const allSelected = variantIds.every(id => prev.has(id))
+      if (allSelected) {
+        // Deselect all variants in this style
+        variantIds.forEach(id => next.delete(id))
+      } else {
+        // Select all variants in this style
+        variantIds.forEach(id => next.add(id))
+      }
+      return next
+    })
+  }
+
+  const selectAll = () => {
+    const allIds = products.map(p => p.id)
+    setSelectedIds(new Set(allIds))
+  }
+
+  const clearSelection = () => {
+    setSelectedIds(new Set())
+  }
+
+  const isStyleFullySelected = (style) => {
+    return style.variants.every(v => selectedIds.has(v.id))
+  }
+
+  const isStylePartiallySelected = (style) => {
+    const selectedCount = style.variants.filter(v => selectedIds.has(v.id)).length
+    return selectedCount > 0 && selectedCount < style.variants.length
+  }
+
+  // Bulk delete
+  const handleBulkDelete = async (permanent = false) => {
+    if (selectedIds.size === 0) return
+
+    setDeleting(true)
+    try {
+      const res = await fetch(`${API_BASE}/bulk`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds), permanent })
+      })
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete products')
+      }
+
+      // Clear selection and refresh
+      clearSelection()
+      setShowDeleteConfirm(false)
+      loadProducts(false)
+    } catch (err) {
+      console.error('Delete error:', err)
+      setError(err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const SortIcon = ({ column }) => {
     if (sortBy !== column) return null
     return sortDir === 'asc'
@@ -368,7 +451,18 @@ export default function AdminProducts() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/10">
-                    <th className="w-10 px-2"></th>
+                    <th className="w-10 px-2">
+                      <input
+                        type="checkbox"
+                        checked={products.length > 0 && selectedIds.size === products.length}
+                        ref={el => {
+                          if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < products.length
+                        }}
+                        onChange={(e) => e.target.checked ? selectAll() : clearSelection()}
+                        className="w-4 h-4 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                      />
+                    </th>
+                    <th className="w-8 px-2"></th>
                     <th
                       className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide cursor-pointer hover:text-white"
                       onClick={() => handleSort('style_no')}
@@ -407,13 +501,13 @@ export default function AdminProducts() {
                 <tbody>
                   {loading && products.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-16">
+                      <td colSpan={9} className="text-center py-16">
                         <Loader2 className="w-8 h-8 animate-spin text-white/40 mx-auto" />
                       </td>
                     </tr>
                   ) : groupedByStyle.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-16 text-white/50">
+                      <td colSpan={9} className="text-center py-16 text-white/50">
                         No products found
                       </td>
                     </tr>
@@ -426,9 +520,20 @@ export default function AdminProducts() {
                         <React.Fragment key={styleKey}>
                           {/* Style Row */}
                           <tr
-                            className={`border-b border-white/5 cursor-pointer transition-colors ${isExpanded ? 'bg-emerald-500/10' : 'hover:bg-white/5'}`}
+                            className={`border-b border-white/5 cursor-pointer transition-colors ${isExpanded ? 'bg-emerald-500/10' : 'hover:bg-white/5'} ${isStyleFullySelected(style) ? 'bg-emerald-500/15' : ''}`}
                             onClick={() => toggleStyleExpand(styleKey)}
                           >
+                            <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={isStyleFullySelected(style)}
+                                ref={el => {
+                                  if (el) el.indeterminate = isStylePartiallySelected(style)
+                                }}
+                                onChange={(e) => toggleSelectStyle(style, e)}
+                                className="w-4 h-4 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                              />
+                            </td>
                             <td className="px-2 py-3">
                               <motion.div
                                 animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -491,7 +596,7 @@ export default function AdminProducts() {
                           <AnimatePresence>
                             {isExpanded && (
                               <tr>
-                                <td colSpan={8} className="p-0">
+                                <td colSpan={9} className="p-0">
                                   <motion.div
                                     initial={{ height: 0, opacity: 0 }}
                                     animate={{ height: 'auto', opacity: 1 }}
@@ -503,6 +608,7 @@ export default function AdminProducts() {
                                       <table className="w-full">
                                         <thead>
                                           <tr className="bg-white/5">
+                                            <th className="w-10 px-4 py-2"></th>
                                             <th className="text-left px-4 py-2 text-[10px] font-semibold text-white/50 uppercase tracking-wide">SKU</th>
                                             <th className="text-left px-4 py-2 text-[10px] font-semibold text-white/50 uppercase tracking-wide">Colour</th>
                                             <th className="text-right px-4 py-2 text-[10px] font-semibold text-white/50 uppercase tracking-wide">Cost</th>
@@ -514,7 +620,15 @@ export default function AdminProducts() {
                                         </thead>
                                         <tbody>
                                           {style.variants.map((variant) => (
-                                            <tr key={variant.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                            <tr key={variant.id} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${selectedIds.has(variant.id) ? 'bg-emerald-500/10' : ''}`}>
+                                              <td className="px-4 py-2.5">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={selectedIds.has(variant.id)}
+                                                  onChange={(e) => toggleSelectProduct(variant.id, e)}
+                                                  className="w-4 h-4 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                                                />
+                                              </td>
                                               <td className="px-4 py-2.5 font-mono text-white/70 text-xs">{variant.sku}</td>
                                               <td className="px-4 py-2.5">
                                                 <div className="flex items-center gap-2">
@@ -593,6 +707,91 @@ export default function AdminProducts() {
             </div>
           )}
         </div>
+
+        {/* Bulk Action Bar */}
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+            >
+              <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-[#1a1f26] border border-white/10 shadow-xl backdrop-blur-xl">
+                <span className="text-white font-medium">
+                  {selectedIds.size} {selectedIds.size === 1 ? 'product' : 'products'} selected
+                </span>
+                <div className="w-px h-6 bg-white/20" />
+                <button
+                  onClick={clearSelection}
+                  className="px-3 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all text-sm"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleting}
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all text-sm font-medium disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-[#1a1f26] rounded-2xl p-6 max-w-md w-full mx-4 border border-white/10 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Delete Products</h3>
+                </div>
+                <p className="text-white/70 mb-6">
+                  Are you sure you want to delete {selectedIds.size} {selectedIds.size === 1 ? 'product' : 'products'}?
+                  This will deactivate them from the store.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleBulkDelete(false)}
+                    disabled={deleting}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all disabled:opacity-50"
+                  >
+                    {deleting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                    {deleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Product Edit Modal */}
         <ProductFormModal
