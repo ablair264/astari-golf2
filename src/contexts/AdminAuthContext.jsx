@@ -12,6 +12,11 @@ export const AdminAuthProvider = ({ children }) => {
       try {
         const session = await getSession()
         setUser(session?.user || null)
+        // Ensure token exists for API auth
+        if (session?.user && !localStorage.getItem('adminToken')) {
+          const token = btoa(`${session.user.email}:${Date.now()}`)
+          localStorage.setItem('adminToken', token)
+        }
       } catch (err) {
         console.error('Session load error', err)
         setUser(null)
@@ -27,12 +32,18 @@ export const AdminAuthProvider = ({ children }) => {
     // Fetch session after login
     const session = await getSession()
     setUser(session?.user || null)
+    // Store token for API auth (livechat, etc.)
+    if (session?.user) {
+      const token = btoa(`${session.user.email}:${Date.now()}`)
+      localStorage.setItem('adminToken', token)
+    }
     return res
   }
 
   const logout = async () => {
     await signOut()
     setUser(null)
+    localStorage.removeItem('adminToken')
   }
 
   return (
