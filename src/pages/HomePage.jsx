@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
+import BrandLogosCarousel from '@/components/home/BrandLogosCarousel'
 import ProductCarousel from '@/components/ProductCarousel'
+import CategoryShowcase from '@/components/home/CategoryShowcase'
+import GripFinderCTA from '@/components/home/GripFinderCTA'
 import BentoGrid from '@/components/BentoGrid'
 import BrandStory from '@/components/BrandStory'
 import Features from '@/components/Features'
 import Testimonials from '@/components/Testimonials'
+import TrustBadges from '@/components/home/TrustBadges'
 import Newsletter from '@/components/Newsletter'
+import InstagramFeed from '@/components/home/InstagramFeed'
 import Footer from '@/components/Footer'
 import { getAllProducts } from '@/services/products'
 
@@ -50,6 +55,9 @@ const HomePage = () => {
       {/* Hero Section with GridMotion */}
       <Hero />
 
+      {/* Brand Logos Carousel */}
+      <BrandLogosCarousel />
+
       {/* Product Carousel */}
       {loading ? (
         <div className="py-24 flex justify-center">
@@ -58,6 +66,12 @@ const HomePage = () => {
       ) : (
         <ProductCarousel products={products} title="Featured Products" />
       )}
+
+      {/* Category Showcase */}
+      <CategoryShowcase />
+
+      {/* GripFinder CTA */}
+      <GripFinderCTA />
 
       {/* Bento Grid Section */}
       <BentoGrid />
@@ -74,8 +88,14 @@ const HomePage = () => {
       {/* Testimonials Section */}
       <Testimonials />
 
+      {/* Trust Badges */}
+      <TrustBadges />
+
       {/* Newsletter Section */}
       <Newsletter />
+
+      {/* Instagram Feed */}
+      <InstagramFeed />
 
       {/* Footer */}
       <Footer />

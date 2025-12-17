@@ -19,6 +19,7 @@ import {
   Map,
   List,
   MessageCircle,
+  Warehouse,
 } from "lucide-react"
 import { Logo } from "./logo"
 import DashboardNavigation from "./nav-main"
@@ -65,6 +66,11 @@ export const dashboardRoutes = [
         title: "Product Manager",
         icon: <Package2 className="size-3" />,
         link: "/admin/products",
+      },
+      {
+        title: "Inventory",
+        icon: <Warehouse className="size-3" />,
+        link: "/admin/inventory",
       },
       {
         title: "Margin Manager",
