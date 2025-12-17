@@ -87,8 +87,8 @@ export const Step1Sizing = ({ value, onChange }) => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 flex-grow">
-        {/* Left Column: Visual Ruler */}
-        <div className="w-full lg:w-[40%] bg-[#0f121a] rounded-2xl border border-white/5 relative overflow-hidden flex flex-col items-center justify-between p-6">
+        {/* Left Column: Visual Ruler - HIDDEN ON MOBILE */}
+        <div className="hidden lg:flex w-full lg:w-[40%] bg-[#0f121a] rounded-2xl border border-white/5 relative overflow-hidden flex-col items-center justify-between p-6">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]" />
 
           {/* Hand Icon */}
@@ -128,7 +128,7 @@ export const Step1Sizing = ({ value, onChange }) => {
         </div>
 
         {/* Right Column: Inputs */}
-        <div className="w-full lg:w-[60%] flex flex-col gap-6">
+        <div className="w-full lg:w-[60%] flex flex-col gap-4 lg:gap-6">
           {/* Manual Input */}
           <div className={`bg-[#0a0e16] rounded-xl p-5 border transition-colors duration-200 ${error ? 'border-red-500/30 bg-red-500/5' : 'border-white/5 focus-within:border-white/20'}`}>
             <div className="flex justify-between items-center mb-3">

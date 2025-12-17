@@ -18,11 +18,17 @@ import {
   FolderPlus,
   Grid3X3,
   List,
+  Link2,
+  Search,
+  Package,
+  CheckSquare,
+  Square,
 } from 'lucide-react'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
 
 const API_BASE = '/.netlify/functions/image-manager'
+const PRODUCTS_API = '/.netlify/functions/products-admin'
 
 const AdminImageManager = () => {
   const [currentPath, setCurrentPath] = useState('product-images/')
@@ -38,6 +44,10 @@ const AdminImageManager = () => {
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [previewImage, setPreviewImage] = useState(null)
+
+  // Product assignment state
+  const [productPickerOpen, setProductPickerOpen] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
 
   // Load folder contents
   const loadFolder = useCallback(async (path) => {
@@ -121,6 +131,33 @@ const AdminImageManager = () => {
     navigator.clipboard.writeText(url)
   }
 
+  // Toggle file selection
+  const toggleFileSelection = (file) => {
+    setSelectedFiles(prev => {
+      const isSelected = prev.some(f => f.key === file.key)
+      if (isSelected) {
+        return prev.filter(f => f.key !== file.key)
+      } else {
+        return [...prev, file]
+      }
+    })
+  }
+
+  // Select all files
+  const selectAllFiles = () => {
+    if (selectedFiles.length === files.length) {
+      setSelectedFiles([])
+    } else {
+      setSelectedFiles([...files])
+    }
+  }
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedFiles([])
+    setSelectionMode(false)
+  }
+
   // Format file size
   const formatSize = (bytes) => {
     if (bytes < 1024) return `${bytes} B`
@@ -164,34 +201,73 @@ const AdminImageManager = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => loadFolder(currentPath)}
-              className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-              title="Refresh"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-              title={viewMode === 'grid' ? 'List view' : 'Grid view'}
-            >
-              {viewMode === 'grid' ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setCreateFolderModalOpen(true)}
-              className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
-            >
-              <FolderPlus className="w-4 h-4" />
-              New Folder
-            </button>
-            <button
-              onClick={() => setUploadModalOpen(true)}
-              className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-400 transition-colors flex items-center gap-2 text-sm"
-            >
-              <Upload className="w-4 h-4" />
-              Upload Images
-            </button>
+            {/* Selection mode controls */}
+            {selectionMode ? (
+              <>
+                <button
+                  onClick={selectAllFiles}
+                  className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                >
+                  {selectedFiles.length === files.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                  {selectedFiles.length === files.length ? 'Deselect All' : 'Select All'}
+                </button>
+                {selectedFiles.length > 0 && (
+                  <button
+                    onClick={() => setProductPickerOpen(true)}
+                    className="px-3 py-2 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-400 transition-colors flex items-center gap-2 text-sm"
+                  >
+                    <Link2 className="w-4 h-4" />
+                    Assign to Product ({selectedFiles.length})
+                  </button>
+                )}
+                <button
+                  onClick={clearSelection}
+                  className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setSelectionMode(true)}
+                  className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                  title="Select images to assign to products"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  Select
+                </button>
+                <button
+                  onClick={() => loadFolder(currentPath)}
+                  className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                  title="Refresh"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                  className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                  title={viewMode === 'grid' ? 'List view' : 'Grid view'}
+                >
+                  {viewMode === 'grid' ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => setCreateFolderModalOpen(true)}
+                  className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FolderPlus className="w-4 h-4" />
+                  New Folder
+                </button>
+                <button
+                  onClick={() => setUploadModalOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-400 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload Images
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -237,55 +313,87 @@ const AdminImageManager = () => {
               ))}
 
               {/* Files */}
-              {files.map((file) => (
-                <div
-                  key={file.key}
-                  className="group relative flex flex-col rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all overflow-hidden"
-                >
-                  {/* Image Preview */}
-                  <button
-                    onClick={() => setPreviewImage(file)}
-                    className="aspect-square bg-black/20 flex items-center justify-center overflow-hidden"
-                  >
-                    {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
-                      <img
-                        src={file.url}
-                        alt={file.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <ImageIcon className="w-8 h-8 text-white/30" />
+              {files.map((file) => {
+                const isSelected = selectedFiles.some(f => f.key === file.key)
+                return (
+                  <div
+                    key={file.key}
+                    onClick={selectionMode ? () => toggleFileSelection(file) : undefined}
+                    className={cn(
+                      "group relative flex flex-col rounded-xl bg-white/5 hover:bg-white/10 border transition-all overflow-hidden",
+                      selectionMode && "cursor-pointer",
+                      isSelected ? "border-blue-500 ring-2 ring-blue-500/50" : "border-white/10 hover:border-white/20"
                     )}
-                  </button>
+                  >
+                    {/* Selection checkbox */}
+                    {selectionMode && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <div className={cn(
+                          "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                          isSelected ? "bg-blue-500 border-blue-500" : "border-white/40 bg-black/40"
+                        )}>
+                          {isSelected && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Actions overlay */}
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Image Preview */}
                     <button
-                      onClick={() => copyUrl(file.url)}
-                      className="p-1.5 rounded-lg bg-black/60 text-white/80 hover:bg-black/80 hover:text-white transition-colors"
-                      title="Copy URL"
+                      onClick={(e) => {
+                        if (selectionMode) {
+                          e.stopPropagation()
+                          toggleFileSelection(file)
+                        } else {
+                          setPreviewImage(file)
+                        }
+                      }}
+                      className="aspect-square bg-black/20 flex items-center justify-center overflow-hidden"
                     >
-                      <Copy className="w-3.5 h-3.5" />
+                      {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                        <img
+                          src={file.url}
+                          alt={file.name}
+                          className={cn(
+                            "w-full h-full object-cover transition-transform duration-300",
+                            !selectionMode && "group-hover:scale-105"
+                          )}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <ImageIcon className="w-8 h-8 text-white/30" />
+                      )}
                     </button>
-                    <button
-                      onClick={() => handleDelete(file.key)}
-                      className="p-1.5 rounded-lg bg-red-500/60 text-white hover:bg-red-500/80 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
 
-                  {/* File info */}
-                  <div className="p-2">
-                    <p className="text-xs text-white font-medium truncate" title={file.name}>
-                      {file.name}
-                    </p>
-                    <p className="text-[10px] text-white/40">{formatSize(file.size)}</p>
+                    {/* Actions overlay - hide in selection mode */}
+                    {!selectionMode && (
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => copyUrl(file.url)}
+                          className="p-1.5 rounded-lg bg-black/60 text-white/80 hover:bg-black/80 hover:text-white transition-colors"
+                          title="Copy URL"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(file.key)}
+                          className="p-1.5 rounded-lg bg-red-500/60 text-white hover:bg-red-500/80 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* File info */}
+                    <div className="p-2">
+                      <p className="text-xs text-white font-medium truncate" title={file.name}>
+                        {file.name}
+                      </p>
+                      <p className="text-[10px] text-white/40">{formatSize(file.size)}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             /* List View */
@@ -304,51 +412,70 @@ const AdminImageManager = () => {
               ))}
 
               {/* Files */}
-              {files.map((file) => (
-                <div
-                  key={file.key}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-black/20 overflow-hidden flex-shrink-0">
-                    {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
-                      <img src={file.url} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-4 h-4 text-white/30" />
+              {files.map((file) => {
+                const isSelected = selectedFiles.some(f => f.key === file.key)
+                return (
+                  <div
+                    key={file.key}
+                    onClick={selectionMode ? () => toggleFileSelection(file) : undefined}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group",
+                      selectionMode && "cursor-pointer",
+                      isSelected && "bg-blue-500/10"
+                    )}
+                  >
+                    {/* Selection checkbox */}
+                    {selectionMode && (
+                      <div className={cn(
+                        "w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0",
+                        isSelected ? "bg-blue-500 border-blue-500" : "border-white/40"
+                      )}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                    )}
+                    <div className="w-10 h-10 rounded-lg bg-black/20 overflow-hidden flex-shrink-0">
+                      {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                        <img src={file.url} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="w-4 h-4 text-white/30" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white font-medium truncate">{file.name}</p>
+                      <p className="text-xs text-white/40">{formatSize(file.size)}</p>
+                    </div>
+                    {!selectionMode && (
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => copyUrl(file.url)}
+                          className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                          title="Copy URL"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                          title="Open in new tab"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDelete(file.key)}
+                          className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-white/40">{formatSize(file.size)}</p>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => copyUrl(file.url)}
-                      className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                      title="Copy URL"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                      title="Open in new tab"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                    <button
-                      onClick={() => handleDelete(file.key)}
-                      className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -439,6 +566,18 @@ const AdminImageManager = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Product Picker Modal */}
+      {productPickerOpen && (
+        <ProductPickerModal
+          selectedImages={selectedFiles}
+          onClose={() => setProductPickerOpen(false)}
+          onComplete={() => {
+            setProductPickerOpen(false)
+            clearSelection()
+          }}
+        />
       )}
     </AdminLayout>
   )
@@ -829,6 +968,311 @@ const UploadModal = ({ currentPath, onClose, onComplete }) => {
             </button>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Product Picker Modal Component
+const ProductPickerModal = ({ selectedImages, onClose, onComplete }) => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [products, setProducts] = useState([])
+  const [styleGroups, setStyleGroups] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [assigning, setAssigning] = useState(false)
+  const [assignMode, setAssignMode] = useState('main') // 'main' | 'additional'
+  const [success, setSuccess] = useState(false)
+  const searchTimeoutRef = useRef(null)
+
+  // Search products
+  const searchProducts = async (query) => {
+    if (!query || query.length < 2) {
+      setProducts([])
+      setStyleGroups([])
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch(`${PRODUCTS_API}?search=${encodeURIComponent(query)}&limit=50`)
+      const data = await res.json()
+      if (data.success) {
+        // Group by style_no
+        const groups = {}
+        data.products.forEach(product => {
+          const styleNo = product.style_no || product.sku
+          if (!groups[styleNo]) {
+            groups[styleNo] = {
+              style_no: styleNo,
+              name: product.name,
+              image_url: product.image_url,
+              variants: []
+            }
+          }
+          groups[styleNo].variants.push(product)
+        })
+        setStyleGroups(Object.values(groups))
+        setProducts(data.products)
+      }
+    } catch (err) {
+      console.error('Error searching products:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Debounced search
+  const handleSearchChange = (value) => {
+    setSearchQuery(value)
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      searchProducts(value)
+    }, 300)
+  }
+
+  // Assign images to product
+  const handleAssign = async () => {
+    if (!selectedProduct) return
+
+    setAssigning(true)
+    try {
+      const imageUrls = selectedImages.map(f => f.url)
+
+      // Get current product data
+      const productRes = await fetch(`${PRODUCTS_API}/${selectedProduct.id}`)
+      const productData = await productRes.json()
+
+      let updateData = {}
+
+      if (assignMode === 'main') {
+        // Set first image as main, rest as additional
+        updateData.image_url = imageUrls[0]
+        if (imageUrls.length > 1) {
+          const existingImages = productData.product?.images || []
+          updateData.images = [...existingImages, ...imageUrls.slice(1)]
+        }
+      } else {
+        // Add all to additional images
+        const existingImages = productData.product?.images || []
+        updateData.images = [...existingImages, ...imageUrls]
+      }
+
+      const res = await fetch(`${PRODUCTS_API}/${selectedProduct.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setSuccess(true)
+        setTimeout(() => {
+          onComplete()
+        }, 1500)
+      } else {
+        alert('Failed to assign images: ' + data.error)
+      }
+    } catch (err) {
+      alert('Failed to assign images: ' + err.message)
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
+      <div
+        className="w-full max-w-3xl rounded-2xl bg-[#0f1621] border border-white/10 text-white shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Link2 className="w-5 h-5 text-blue-400" />
+              Assign Images to Product
+            </h3>
+            <p className="text-sm text-white/50 mt-0.5">
+              {selectedImages.length} image{selectedImages.length !== 1 ? 's' : ''} selected
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
+            <X className="w-5 h-5 text-white/70" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {success ? (
+            <div className="py-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h4 className="text-xl font-semibold text-white">Images Assigned!</h4>
+              <p className="text-white/60 mt-1">
+                Successfully assigned {selectedImages.length} image{selectedImages.length !== 1 ? 's' : ''} to {selectedProduct?.name}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Selected Images Preview */}
+              <div className="space-y-2">
+                <label className="text-sm text-white/70">Selected Images</label>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {selectedImages.map((img, i) => (
+                    <div key={img.key} className="relative shrink-0">
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        className="w-16 h-16 rounded-lg object-cover border border-white/10"
+                      />
+                      {i === 0 && assignMode === 'main' && (
+                        <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold bg-blue-500 rounded text-white">
+                          MAIN
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Assign Mode */}
+              <div className="space-y-2">
+                <label className="text-sm text-white/70">How to assign?</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAssignMode('main')}
+                    className={cn(
+                      "flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                      assignMode === 'main'
+                        ? "bg-blue-500/20 border-blue-500 text-blue-300"
+                        : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                    )}
+                  >
+                    Set as Main Image
+                    <span className="block text-xs font-normal mt-0.5 opacity-70">
+                      First image becomes main, rest are additional
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setAssignMode('additional')}
+                    className={cn(
+                      "flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                      assignMode === 'additional'
+                        ? "bg-blue-500/20 border-blue-500 text-blue-300"
+                        : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                    )}
+                  >
+                    Add to Gallery
+                    <span className="block text-xs font-normal mt-0.5 opacity-70">
+                      All images added as additional gallery images
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="space-y-2">
+                <label className="text-sm text-white/70">Search Product</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Search by name, SKU, or style number..."
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Results */}
+              <div className="space-y-2">
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-white/40" />
+                  </div>
+                ) : searchQuery.length < 2 ? (
+                  <div className="text-center py-8 text-white/40">
+                    <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p>Type at least 2 characters to search</p>
+                  </div>
+                ) : styleGroups.length === 0 ? (
+                  <div className="text-center py-8 text-white/40">
+                    <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p>No products found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {styleGroups.map((group) => (
+                      <button
+                        key={group.style_no}
+                        onClick={() => setSelectedProduct(group.variants[0])}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all",
+                          selectedProduct?.style_no === group.style_no || selectedProduct?.sku === group.style_no
+                            ? "bg-blue-500/20 border border-blue-500"
+                            : "bg-white/5 border border-transparent hover:bg-white/10"
+                        )}
+                      >
+                        <div className="w-12 h-12 rounded-lg bg-black/20 overflow-hidden flex-shrink-0">
+                          {group.image_url ? (
+                            <img src={group.image_url} alt={group.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="w-5 h-5 text-white/30" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white font-medium truncate">{group.name}</p>
+                          <p className="text-xs text-white/50">
+                            {group.style_no} • {group.variants.length} variant{group.variants.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        {(selectedProduct?.style_no === group.style_no || selectedProduct?.sku === group.style_no) && (
+                          <Check className="w-5 h-5 text-blue-400 shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!success && (
+          <div className="flex justify-end gap-2 px-5 py-4 border-t border-white/10 shrink-0">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-white/15 text-white hover:bg-white/5"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssign}
+              disabled={!selectedProduct || assigning}
+              className="px-4 py-2 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {assigning ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <Link2 className="w-4 h-4" />
+                  Assign to Product
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

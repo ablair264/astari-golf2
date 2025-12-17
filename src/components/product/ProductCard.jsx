@@ -311,7 +311,7 @@ const ProductModal = ({ open, onClose, product, variants, colors, sizes, selecte
   )
 }
 
-const ProductCard = ({ product, onAddToCart, onClick }) => {
+const ProductCard = ({ product, onAddToCart, onClick, isMobile = false }) => {
   // Build variants from product data
   const variants = useMemo(() => buildVariants(product), [product])
   const colorOptions = useMemo(() => getUniqueColors(variants), [variants])

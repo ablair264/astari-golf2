@@ -299,7 +299,7 @@ const UnifiedChatWidget = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-emerald-600 text-white font-medium shadow-lg shadow-emerald-500/30 hover:bg-emerald-700 transition-colors"
+            className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-emerald-600 text-white font-medium shadow-lg shadow-emerald-500/30 hover:bg-emerald-700 transition-colors"
           >
             <MessageCircle className="w-5 h-5" />
             <span className="hidden sm:inline">Chat with us</span>
@@ -315,7 +315,7 @@ const UnifiedChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] h-[550px] max-h-[80vh] bg-[#0f1621] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10"
+            className="fixed bottom-0 right-0 md:bottom-6 md:right-6 z-50 w-full md:w-[380px] h-[85vh] md:h-[550px] md:max-h-[80vh] bg-[#0f1621] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 to-transparent">

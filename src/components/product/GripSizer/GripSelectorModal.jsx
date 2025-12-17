@@ -67,7 +67,7 @@ export default function GripSelectorModal({ isOpen, onClose }) {
 
       {/* Modal Container */}
       <div
-        className={`relative w-full max-w-4xl h-[600px] flex flex-col md:flex-row bg-[#0d121a] rounded-[24px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-white/5 transition-all duration-300 ${
+        className={`relative w-full max-w-4xl h-[80vh] md:h-[600px] flex flex-col md:flex-row bg-[#0d121a] rounded-t-[24px] md:rounded-[24px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-white/5 transition-all duration-300 ${
           isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'
         }`}
       >
