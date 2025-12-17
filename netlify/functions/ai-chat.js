@@ -1,5 +1,4 @@
-// AI Chat - Uses OpenAI for chat responses
-const fetch = require('node-fetch')
+// AI Chat - Uses OpenAI for chat responses (uses native fetch in Node 18+)
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
