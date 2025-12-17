@@ -13,7 +13,7 @@ const applyOfferToProducts = async (offer) => {
   const conditions = []
   if (offer.brand_id) conditions.push(`p.brand_id = ${offer.brand_id}`)
   if (offer.category_id) conditions.push(`p.category_id = ${offer.category_id}`)
-  if (offer.style_no) conditions.push(`p.style_no = ${offer.style_no}`)
+  if (offer.style_no) conditions.push(`CAST(p.style_no AS TEXT) = '${String(offer.style_no).replace(/'/g, "''")}'`)
   if (offer.sku) conditions.push(`p.sku = '${offer.sku.replace(/'/g, "''")}'`)
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
   if (!where) return { updated: 0 }

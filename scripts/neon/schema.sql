@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   sku TEXT,
-  style_no INTEGER,
+  style_no TEXT,
   colour_name TEXT,
   colour_hex TEXT,
   brand TEXT,
@@ -53,11 +53,27 @@ ALTER TABLE brands
 -- Backfill columns for existing products table (idempotent for reruns)
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS sku TEXT,
-  ADD COLUMN IF NOT EXISTS style_no INTEGER,
+  ADD COLUMN IF NOT EXISTS style_no TEXT,
   ADD COLUMN IF NOT EXISTS colour_name TEXT,
   ADD COLUMN IF NOT EXISTS colour_hex TEXT,
   ADD COLUMN IF NOT EXISTS brand TEXT,
   ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id);
+
+-- Ensure style_no supports alphanumeric codes (idempotent migration for older schemas)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'products'
+      AND column_name = 'style_no'
+      AND data_type <> 'text'
+  ) THEN
+    ALTER TABLE products
+      ALTER COLUMN style_no TYPE TEXT
+      USING style_no::text;
+  END IF;
+END $$;
 
 -- Cart items table (session-based)
 CREATE TABLE IF NOT EXISTS cart_items (

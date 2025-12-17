@@ -37,6 +37,12 @@ Modern e-commerce application for ASTARI golf products built with React, Vite, a
 psql "<your_neon_connection_string>" -f scripts/neon/schema.sql
 ```
 
+#### Migrate Existing Databases (style codes)
+If your database already exists and `products.style_no` is an `INTEGER`, importing products with alphanumeric style codes (e.g. `LAM-CL-01`) will fail. Run:
+```bash
+psql "<your_neon_connection_string>" -f scripts/neon/migrate-style-no-to-text.sql
+```
+
 #### Seed Sample Data
 ```bash
 node scripts/neon/seed.js

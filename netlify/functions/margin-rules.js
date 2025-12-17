@@ -13,7 +13,7 @@ const applyRuleToProducts = async (rule) => {
   const conditions = []
   if (rule.brand_id) conditions.push(`p.brand_id = ${rule.brand_id}`)
   if (rule.category_id) conditions.push(`p.category_id = ${rule.category_id}`)
-  if (rule.style_no) conditions.push(`p.style_no = ${rule.style_no}`)
+  if (rule.style_no) conditions.push(`CAST(p.style_no AS TEXT) = '${String(rule.style_no).replace(/'/g, "''")}'`)
   if (rule.sku) conditions.push(`p.sku = '${rule.sku.replace(/'/g, "''")}'`)
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
   if (!where) return { updated: 0 }
@@ -50,7 +50,7 @@ export async function handler(event) {
         SELECT mr.*,
           (SELECT COUNT(*) FROM products p WHERE
             (mr.sku IS NULL OR p.sku = mr.sku) AND
-            (mr.style_no IS NULL OR p.style_no = mr.style_no) AND
+            (mr.style_no IS NULL OR CAST(p.style_no AS TEXT) = CAST(mr.style_no AS TEXT)) AND
             (mr.category_id IS NULL OR p.category_id = mr.category_id) AND
             (mr.brand_id IS NULL OR p.brand_id = mr.brand_id) AND
             (mr.sku IS NOT NULL OR mr.style_no IS NOT NULL OR mr.category_id IS NOT NULL OR mr.brand_id IS NOT NULL)
@@ -69,7 +69,7 @@ export async function handler(event) {
 
       const conditions = []
       if (sku) conditions.push(`p.sku = '${sku.replace(/'/g, "''")}'`)
-      if (style_no) conditions.push(`p.style_no = '${String(style_no).replace(/'/g, "''")}'`)
+      if (style_no) conditions.push(`CAST(p.style_no AS TEXT) = '${String(style_no).replace(/'/g, "''")}'`)
       if (category_id) conditions.push(`p.category_id = ${category_id}`)
       if (brand_id) conditions.push(`p.brand_id = ${brand_id}`)
 

@@ -27,35 +27,60 @@ const DB_COLUMNS = [
   { key: 'core_size', label: 'Core Size', required: false },
 ]
 
-// Smart column name matching
+// Smart column name matching - order matters for priority
 const COLUMN_ALIASES = {
-  name: ['name', 'product name', 'product_name', 'title', 'product title', 'item name', 'item'],
-  sku: ['sku', 'sku code', 'product code', 'code', 'item code', 'article', 'article number', 'barcode'],
-  price: ['price', 'cost', 'unit price', 'unit cost', 'rrp', 'retail price', 'wholesale', 'trade price'],
-  style_no: ['style', 'style no', 'style_no', 'style number', 'style code', 'model', 'model no'],
-  brand_name: ['brand', 'brand name', 'brand_name', 'manufacturer', 'vendor'],
-  category_name: ['category', 'category name', 'category_name', 'type', 'product type', 'group'],
-  description: ['description', 'desc', 'product description', 'details', 'info', 'about'],
-  image_url: ['image', 'image url', 'image_url', 'photo', 'picture', 'img', 'thumbnail'],
-  colour_name: ['colour', 'color', 'colour name', 'color name', 'colour_name', 'color_name'],
-  colour_hex: ['colour hex', 'color hex', 'hex', 'colour_hex', 'color_hex', 'hex code'],
-  stock_quantity: ['stock', 'quantity', 'stock quantity', 'stock_quantity', 'qty', 'inventory', 'available'],
-  material: ['material', 'materials', 'fabric', 'composition'],
-  size: ['size', 'sizes', 'dimensions'],
-  core_size: ['core size', 'core_size', 'grip size'],
+  name: ['name', 'product name', 'product_name', 'productname', 'title', 'product title', 'item name', 'item'],
+  sku: ['sku', 'sku_code', 'sku code', 'skucode', 'product code', 'product_code', 'code', 'item code', 'item_code', 'article', 'article number', 'barcode'],
+  price: ['price', 'cost', 'unit price', 'unit_price', 'unit cost', 'unit_cost', 'rrp', 'retail price', 'wholesale', 'trade price', 'trade_price'],
+  style_no: ['style_no', 'style no', 'styleno', 'style', 'style number', 'style_number', 'style code', 'style_code', 'model', 'model no', 'model_no'],
+  brand_name: ['brand_name', 'brand name', 'brandname', 'brand', 'manufacturer', 'vendor', 'make'],
+  category_name: ['category_name', 'category name', 'categoryname', 'category', 'type', 'product type', 'product_type', 'group', 'dept', 'department'],
+  description: ['description', 'desc', 'product description', 'product_description', 'details', 'info', 'about', 'summary'],
+  image_url: ['image_url', 'image url', 'imageurl', 'image', 'photo', 'photo_url', 'picture', 'img', 'thumbnail', 'main_image', 'main image'],
+  colour_name: ['colour_name', 'colour name', 'colourname', 'color_name', 'color name', 'colorname', 'colour', 'color'],
+  colour_hex: ['colour_hex', 'colour hex', 'colourhex', 'color_hex', 'color hex', 'colorhex', 'hex', 'hex code', 'hex_code', 'hexcode', 'color code', 'colour code'],
+  stock_quantity: ['stock_quantity', 'stock quantity', 'stockquantity', 'stock', 'quantity', 'qty', 'inventory', 'available', 'in stock', 'in_stock', 'units'],
+  material: ['material', 'materials', 'fabric', 'composition', 'made of', 'made_of'],
+  size: ['size', 'sizes', 'dimensions', 'grip size range'],
+  core_size: ['core_size', 'core size', 'coresize', 'grip size', 'grip_size', 'core', 'round size', 'round_size'],
 }
 
 function autoMapColumns(uploadedColumns) {
   const mapping = {}
 
   uploadedColumns.forEach((col) => {
+    const normalizedCol = col.toLowerCase().trim().replace(/[\s_-]+/g, '_')
+    const normalizedColNoUnderscore = normalizedCol.replace(/_/g, '')
+
+    for (const [dbCol, aliases] of Object.entries(COLUMN_ALIASES)) {
+      // Check for exact match first (highest priority)
+      const exactMatch = aliases.some(alias => {
+        const normalizedAlias = alias.toLowerCase().replace(/[\s_-]+/g, '_')
+        const normalizedAliasNoUnderscore = normalizedAlias.replace(/_/g, '')
+        return normalizedCol === normalizedAlias ||
+               normalizedColNoUnderscore === normalizedAliasNoUnderscore ||
+               col.toLowerCase().trim() === alias
+      })
+
+      if (exactMatch && !mapping[dbCol]) {
+        mapping[dbCol] = col
+        break
+      }
+    }
+  })
+
+  // Second pass: partial matches for columns not yet mapped
+  uploadedColumns.forEach((col) => {
     const normalizedCol = col.toLowerCase().trim()
 
     for (const [dbCol, aliases] of Object.entries(COLUMN_ALIASES)) {
-      if (aliases.some(alias => normalizedCol === alias || normalizedCol.includes(alias))) {
-        if (!mapping[dbCol]) {
-          mapping[dbCol] = col
-        }
+      if (mapping[dbCol]) continue // Already mapped
+
+      // Check if column contains any alias
+      const partialMatch = aliases.some(alias => normalizedCol.includes(alias))
+
+      if (partialMatch) {
+        mapping[dbCol] = col
         break
       }
     }

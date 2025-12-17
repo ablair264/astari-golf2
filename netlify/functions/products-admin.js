@@ -9,6 +9,13 @@ const headers = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
+const slugify = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+
 const mapSort = (column) => {
   const allowed = ['sku', 'name', 'brand', 'category', 'price', 'final_price', 'margin_percentage', 'created_at']
   return allowed.includes(column) ? column : 'sku'
@@ -53,10 +60,8 @@ const buildConditions = (params) => {
   }
   if (brandName) addIlike('b.name', brandName)
 
-  const styleNumber = Number(styleNo)
-  if (!Number.isNaN(styleNumber) && styleNo !== null && styleNo !== '') {
-    addExact('p.style_no', styleNumber)
-  }
+  const styleCode = styleNo !== null && styleNo !== undefined ? String(styleNo).trim() : ''
+  if (styleCode) addExact('CAST(p.style_no AS TEXT)', styleCode)
   if (productType) addIlike('c.name', productType)
   if (hasSpecialOffer !== null && hasSpecialOffer !== undefined && hasSpecialOffer !== '') {
     addExact('p.is_special_offer', hasSpecialOffer === 'true')
@@ -389,7 +394,7 @@ exports.handler = async function(event) {
       }
 
       values.push(styleNo)
-      const result = await sql(`UPDATE products SET ${updates.join(', ')} WHERE style_no = $${values.length} RETURNING sku`, values)
+      const result = await sql(`UPDATE products SET ${updates.join(', ')} WHERE CAST(style_no AS TEXT) = $${values.length} RETURNING sku`, values)
 
       return {
         statusCode: 200,
@@ -416,8 +421,12 @@ exports.handler = async function(event) {
         return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'sku is required' }) }
       }
 
-      // Generate slug from name
-      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      const styleNoValue = style_no !== null && style_no !== undefined && String(style_no).trim() !== '' ? String(style_no).trim() : null
+
+      // Generate slug from name + sku to ensure uniqueness across variants
+      const baseSlug = slugify(name)
+      const skuSlug = slugify(sku)
+      const slug = skuSlug ? (baseSlug ? `${baseSlug}-${skuSlug}` : skuSlug) : baseSlug
 
       // Resolve brand_id from brand_name if provided
       let resolvedBrandId = brand_id || null
@@ -468,7 +477,7 @@ exports.handler = async function(event) {
           ${name},
           ${slug},
           ${sku},
-          ${style_no || null},
+          ${styleNoValue},
           ${resolvedBrandId},
           ${resolvedCategoryId},
           ${parseFloat(price) || 0},
@@ -606,13 +615,17 @@ exports.handler = async function(event) {
 
     // Bulk delete (deactivate) products by IDs
     if (method === 'DELETE' && path === '/bulk') {
+      const body = JSON.parse(event.body || '{}')
       const { ids, permanent } = body
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
         return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Product IDs array required' }) }
       }
 
       // Limit to 100 at a time for safety
-      const idsToDelete = ids.slice(0, 100).map(id => Number(id)).filter(id => !isNaN(id))
+      const idsToDelete = ids
+        .slice(0, 100)
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id))
       if (idsToDelete.length === 0) {
         return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'No valid IDs provided' }) }
       }
@@ -620,10 +633,10 @@ exports.handler = async function(event) {
       let result
       if (permanent) {
         // Hard delete - permanently remove from database
-        result = await sql`DELETE FROM products WHERE id = ANY(${idsToDelete}) RETURNING id`
+        result = await sql(`DELETE FROM products WHERE id = ANY($1::int[]) RETURNING id`, [idsToDelete])
       } else {
         // Soft delete - just deactivate
-        result = await sql`UPDATE products SET is_active = false, updated_at = NOW() WHERE id = ANY(${idsToDelete}) RETURNING id`
+        result = await sql(`UPDATE products SET is_active = false, updated_at = NOW() WHERE id = ANY($1::int[]) RETURNING id`, [idsToDelete])
       }
 
       return {

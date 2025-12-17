@@ -1,0 +1,21 @@
+name	sku	price	style_no	brand_name	category_name	description	image_url	colour_name	colour_hex	stock_quantity	material	size
+Astari Tour Cord	AST-TC-001	5.25	AST-TC-01	Astari	Grips		Black	#000000	75	Cord, Rubber	Standard
+Astari Tour Cord	AST-TC-002	5.25	AST-TC-01	Astari	Grips		Black	#000000	75	Cord, Rubber	Midsize
+Astari Tour Cord	AST-TC-003	5.25	AST-TC-01	Astari	Grips		White	#FFFFFF	50	Cord, Rubber	Standard
+Astari Tour Cord	AST-TC-004	5.25	AST-TC-01	Astari	Grips		White	#FFFFFF	50	Cord, Rubber	Midsize
+Astari Soft Feel	AST-SF-001	4.95	AST-SF-01	Astari	Grips		Grey	#808080	100	Rubber	Standard
+Astari Soft Feel	AST-SF-002	4.95	AST-SF-01	Astari	Grips		Grey	#808080	100	Rubber	Midsize
+Astari Soft Feel	AST-SF-003	4.95	AST-SF-01	Astari	Grips		Navy	#001F3F	80	Rubber	Standard
+Astari Soft Feel	AST-SF-004	4.95	AST-SF-01	Astari	Grips		Navy	#001F3F	80	Rubber	Midsize
+Lamkin Crossline	LAM-CL-001	6.50	LAM-CL-01	Lamkin	Grips		Black	#000000	120	Rubber	Standard
+Lamkin Crossline	LAM-CL-002	6.50	LAM-CL-01	Lamkin	Grips		Black	#000000	120	Rubber	Midsize
+Lamkin Crossline	LAM-CL-003	6.50	LAM-CL-01	Lamkin	Grips		Black	#000000	90	Rubber	Jumbo
+Lamkin Sonar	LAM-SN-001	7.25	LAM-SN-01	Lamkin	Grips		Green	#2ECC40	60	Hybrid Cord	Standard
+Lamkin Sonar	LAM-SN-002	7.25	LAM-SN-01	Lamkin	Grips		Green	#2ECC40	60	Hybrid Cord	Midsize
+Lamkin Sonar	LAM-SN-003	7.25	LAM-SN-01	Lamkin	Grips		Red	#FF4136	45	Hybrid Cord	Standard
+Astari Stand Bag	AST-BAG-001	89.99	AST-BAG-01	Astari	Bags		Black	#000000	25	Nylon, Polyester
+Astari Stand Bag	AST-BAG-002	89.99	AST-BAG-01	Astari	Bags		Navy	#001F3F	20	Nylon, Polyester
+Astari Stand Bag	AST-BAG-003	89.99	AST-BAG-01	Astari	Bags		Grey	#AAAAAA	15	Nylon, Polyester
+Astari Cart Bag	AST-CBG-001	119.99	AST-CBG-01	Astari	Bags		Black	#000000	18	Premium Nylon
+Astari Cart Bag	AST-CBG-002	119.99	AST-CBG-01	Astari	Bags		White	#FFFFFF	12	Premium Nylon
+Astari Cart Bag	AST-CBG-003	119.99	AST-CBG-01	Astari	Bags		Red	#FF0000	10	Premium Nylon
