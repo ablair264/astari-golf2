@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, Heart, X, Plus, Minus, ShoppingBag, Check } from 'lucide-react'
+import { Eye, Heart, X, Plus, Minus, ShoppingBag, Check, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup, ButtonGroupText } from '@/components/ui/button-group'
@@ -8,23 +8,52 @@ import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useToast } from '@/contexts/ToastContext'
 
-const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
+const ProductCard = ({ product, isExpanded = false, onToggleExpand, variants = [] }) => {
   const navigate = useNavigate()
   const [isHovered, setIsHovered] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(null)
   const [justAdded, setJustAdded] = useState(false)
+  const [selectedVariant, setSelectedVariant] = useState(null)
 
   const { addToCart, isInCart, getCartItem } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
   const { showCartToast } = useToast()
 
+  // Get the image URL - prefer image_url from database, fallback to media
+  const getImageUrl = (p) => p?.image_url || p?.media || '/images/placeholder.png'
+
+  // Get all images for gallery - combine image_url with images array
+  const getGalleryImages = (p) => {
+    const images = []
+    if (p?.image_url) images.push(p.image_url)
+    if (p?.images && Array.isArray(p.images)) {
+      images.push(...p.images.filter(img => img && img !== p.image_url))
+    }
+    if (p?.gallery && Array.isArray(p.gallery)) {
+      images.push(...p.gallery.filter(img => img && !images.includes(img)))
+    }
+    return images.length > 0 ? images : []
+  }
+
+  // Current product to display (selected variant or main product)
+  const displayProduct = selectedVariant || product
+  const currentImageUrl = getImageUrl(displayProduct)
+  const galleryImages = getGalleryImages(displayProduct)
+
   // Check if product is in wishlist
-  const isWishlisted = isInWishlist(product.id)
+  const isWishlisted = isInWishlist(displayProduct.id)
 
   // Check if product is in cart
-  const inCart = isInCart(product.id)
-  const cartItem = getCartItem(product.id)
+  const inCart = isInCart(displayProduct.id)
+  const cartItem = getCartItem(displayProduct.id)
+
+  // Reset selected variant when card collapses
+  useEffect(() => {
+    if (!isExpanded) {
+      setSelectedVariant(null)
+    }
+  }, [isExpanded])
 
   // Reset "just added" state after animation
   useEffect(() => {

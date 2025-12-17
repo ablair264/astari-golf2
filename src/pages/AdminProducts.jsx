@@ -607,9 +607,9 @@ export default function AdminProducts() {
 
         {/* Product Upload Modal */}
         <ProductUploadModal
-          isOpen={showUploadModal}
+          open={showUploadModal}
           onClose={() => setShowUploadModal(false)}
-          onImportComplete={() => {
+          onSuccess={() => {
             setShowUploadModal(false)
             loadProducts(false)
           }}
