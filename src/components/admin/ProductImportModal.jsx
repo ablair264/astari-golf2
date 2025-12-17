@@ -213,8 +213,8 @@ export function ProductImportModal({ open, onOpenChange, onImportComplete }) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-[#1e2329] text-white border-gray-700">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-hidden bg-[#1e2329] text-white border-gray-700 p-0">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-700">
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <FileSpreadsheet className="w-6 h-6 text-emerald-400" />
             Import Products
@@ -222,7 +222,7 @@ export function ProductImportModal({ open, onOpenChange, onImportComplete }) {
         </DialogHeader>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-6 px-4">
+        <div className="flex items-center justify-between py-4 px-6 bg-gray-800/30">
           {STEPS.map((step, index) => (
             <div key={step.id} className="flex items-center">
               <button
@@ -248,7 +248,7 @@ export function ProductImportModal({ open, onOpenChange, onImportComplete }) {
 
         {/* Error Banner */}
         {error && (
-          <div className="mx-4 mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-300">
+          <div className="mx-6 my-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-300">
             <XCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{error}</span>
             <button onClick={() => setError(null)} className="ml-auto">
@@ -258,7 +258,7 @@ export function ProductImportModal({ open, onOpenChange, onImportComplete }) {
         )}
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex-1 overflow-y-auto px-6 py-6 max-h-[calc(90vh-180px)]">
           <AnimatePresence mode="wait">
             {/* Step 1: Upload */}
             {currentStep === 1 && (
