@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { DashboardSidebar } from '@/components/admin/dashboard-sidebar'
-import { ToggleLeft, ToggleRight } from 'lucide-react'
+import { ToggleLeft, ToggleRight, LogOut } from 'lucide-react'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 
 const AdminLayout = ({ title, subtitle, children }) => {
+  const navigate = useNavigate()
+  const { logout } = useAdminAuth()
   const [isLiveChatOnline, setIsLiveChatOnline] = useState(false)
 
   // Fetch LiveChat online status
@@ -63,26 +67,41 @@ const AdminLayout = ({ title, subtitle, children }) => {
                   )}
                 </div>
 
-                {/* LiveChat Toggle */}
-                <button
-                  onClick={toggleLiveChat}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                    isLiveChatOnline
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'
-                  }`}
-                  title={isLiveChatOnline ? 'LiveChat Online' : 'LiveChat Offline'}
-                >
-                  {isLiveChatOnline ? (
-                    <ToggleRight className="w-5 h-5" />
-                  ) : (
-                    <ToggleLeft className="w-5 h-5" />
-                  )}
-                  <span className="text-sm font-medium hidden sm:inline">
-                    {isLiveChatOnline ? 'Online' : 'Offline'}
-                  </span>
-                  <span className={`w-2 h-2 rounded-full ${isLiveChatOnline ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* LiveChat Toggle */}
+                  <button
+                    onClick={toggleLiveChat}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      isLiveChatOnline
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'
+                    }`}
+                    title={isLiveChatOnline ? 'LiveChat Online' : 'LiveChat Offline'}
+                  >
+                    {isLiveChatOnline ? (
+                      <ToggleRight className="w-5 h-5" />
+                    ) : (
+                      <ToggleLeft className="w-5 h-5" />
+                    )}
+                    <span className="text-sm font-medium hidden sm:inline">
+                      {isLiveChatOnline ? 'Online' : 'Offline'}
+                    </span>
+                    <span className={`w-2 h-2 rounded-full ${isLiveChatOnline ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
+                  </button>
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={async () => {
+                      await logout()
+                      navigate('/admin/login')
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="text-sm font-medium hidden sm:inline">Logout</span>
+                  </button>
+                </div>
               </div>
             </header>
             <main className="flex-1 px-6 py-6">{children}</main>
