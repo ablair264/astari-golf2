@@ -187,35 +187,19 @@ export const getPriceRange = async () => {
   }
 }
 
-// Create product
+// Create product via netlify function
 export const createProduct = async (productData) => {
   try {
-    const result = await query(`
-      INSERT INTO products (
-        name, slug, description, price, category_id,
-        image_url, images, stock_quantity, metadata,
-        sku, style_no, colour_name, colour_hex, brand_id, brand
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      RETURNING *
-    `, [
-      productData.name,
-      productData.slug,
-      productData.description,
-      productData.price,
-      productData.category_id,
-      productData.image_url || '',
-      JSON.stringify(productData.images || []),
-      productData.stock_quantity || 0,
-      JSON.stringify(productData.metadata || {}),
-      productData.sku || null,
-      productData.style_no || null,
-      productData.colour_name || null,
-      productData.colour_hex || null,
-      productData.brand_id || null,
-      productData.brand || null,
-    ])
-    return result[0]
+    const res = await fetch('/.netlify/functions/products-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(productData)
+    })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to create product')
+    }
+    return data.product
   } catch (error) {
     console.error('Error creating product:', error)
     throw error
