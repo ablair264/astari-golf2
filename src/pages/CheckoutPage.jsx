@@ -362,6 +362,25 @@ const CheckoutPage = () => {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{item.name}</p>
+                      {(item.colour_hex || item.size) && (
+                        <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
+                          {item.colour_hex && (
+                            <>
+                              <span
+                                className="inline-flex h-3 w-3 rounded-full border border-white/20"
+                                style={{ backgroundColor: item.colour_hex }}
+                              />
+                              <span className="capitalize">{item.colour_name || 'Colour'}</span>
+                            </>
+                          )}
+                          {item.size && (
+                            <>
+                              {item.colour_hex && <span>•</span>}
+                              <span>Size: {item.size}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                       <p className="text-xs text-white/60 mt-1">Qty: {item.quantity}</p>
                     </div>
                     <p className="font-semibold">

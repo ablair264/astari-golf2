@@ -204,6 +204,25 @@ const CartItemRow = ({ item, onRemove, onIncrement, onDecrement }) => {
               <p className="text-sm text-gray-400">
                 {item.brand} • {item.category}
               </p>
+              {(item.colour_hex || item.size) && (
+                <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
+                  {item.colour_hex && (
+                    <>
+                      <span
+                        className="inline-flex h-4 w-4 rounded-full border border-white/20"
+                        style={{ backgroundColor: item.colour_hex }}
+                      />
+                      <span className="capitalize">{item.colour_name || 'Colour'}</span>
+                    </>
+                  )}
+                  {item.size && (
+                    <>
+                      {item.colour_hex && <span className="text-gray-500">•</span>}
+                      <span>Size: {item.size}</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
             <button
               onClick={onRemove}

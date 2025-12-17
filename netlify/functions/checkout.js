@@ -190,6 +190,9 @@ exports.handler = async (event) => {
           product_sku,
           product_image,
           colour_name,
+          colour_hex,
+          size,
+          material,
           quantity,
           unit_price,
           subtotal
@@ -200,6 +203,9 @@ exports.handler = async (event) => {
           ${item.sku || null},
           ${item.media || null},
           ${item.colour_name || null},
+          ${item.colour_hex || null},
+          ${item.size || null},
+          ${item.material || null},
           ${item.quantity},
           ${unitPrice},
           ${lineSubtotal}

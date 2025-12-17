@@ -14,6 +14,7 @@ import {
   Ruler,
 } from 'lucide-react'
 import { cartUtils, useCart } from '@/contexts/CartContext'
+import { useToast } from '@/contexts/ToastContext'
 
 const normalizeArray = (val) => {
   if (!val) return []
@@ -325,6 +326,7 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
   const [justAdded, setJustAdded] = useState(false)
 
   const { isInCart, getCartItem } = useCart()
+  const { showCartToast } = useToast()
 
   // Get the selected color's variant
   const selectedColor = colorOptions[selectedColorIndex]
@@ -366,8 +368,16 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
 
   const handleAddToCart = () => {
     // Pass the selected variant to cart
-    onAddToCart?.(product, selectedVariant || product, quantity)
+    const variantToAdd = selectedVariant || product
+    onAddToCart?.(product, variantToAdd, quantity)
     setJustAdded(true)
+
+    // Show toast notification at bottom of screen
+    showCartToast({
+      name: product.name,
+      media: variantToAdd.images?.[0] || product.image_url,
+      final_price: variantToAdd.price,
+    }, quantity)
   }
 
   const handleColorSelect = (index) => {
@@ -596,19 +606,6 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
               </AnimatePresence>
             </button>
 
-            {/* Added to cart notification */}
-            <AnimatePresence>
-              {justAdded && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute -top-2 left-1/2 -translate-x-1/2 px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-full shadow-lg z-20"
-                >
-                  Added to cart!
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </motion.div>

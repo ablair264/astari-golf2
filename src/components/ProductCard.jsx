@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ButtonGroup, ButtonGroupText } from '@/components/ui/button-group'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
+import { useToast } from '@/contexts/ToastContext'
 
 const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
   const navigate = useNavigate()
@@ -16,6 +17,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
 
   const { addToCart, isInCart, getCartItem } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
+  const { showCartToast } = useToast()
 
   // Check if product is in wishlist
   const isWishlisted = isInWishlist(product.id)
@@ -62,6 +64,12 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
     setJustAdded(true)
     // Reset quantity after adding to cart
     setQuantity(1)
+    // Show toast notification
+    showCartToast({
+      name: product.name,
+      media: product.media || product.image_url,
+      final_price: product.final_price ?? product.calculated_price ?? product.price,
+    }, quantity)
   }
 
   return (

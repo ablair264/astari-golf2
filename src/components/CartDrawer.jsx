@@ -127,7 +127,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
               <Button
                 onClick={handleViewCart}
                 variant="outline"
-                className="w-full border-gray-600 text-white hover:bg-gray-700"
+                className="w-full border-gray-600 bg-white/5 text-white hover:bg-white/10 hover:border-gray-500"
               >
                 View Full Cart
               </Button>
@@ -180,14 +180,24 @@ const CartItemCard = ({ item, onRemove, onIncrement, onDecrement }) => {
               {item.category && <span>• {item.category}</span>}
               {item.style_no && <span>• Style {item.style_no}</span>}
             </div>
-            {item.colour_hex && (
-              <div className="flex items-center gap-2 text-[11px] text-gray-400 mt-1">
-                <span
-                  className="inline-flex h-3.5 w-3.5 rounded-full border border-black/20"
-                  style={{ backgroundColor: item.colour_hex }}
-                />
-                <span className="capitalize">{item.colour_name || 'Colour'}</span>
-                {item.sku && <span className="text-gray-500">SKU {item.sku}</span>}
+            {(item.colour_hex || item.size) && (
+              <div className="flex items-center gap-2 text-[11px] text-gray-400 mt-1 flex-wrap">
+                {item.colour_hex && (
+                  <>
+                    <span
+                      className="inline-flex h-3.5 w-3.5 rounded-full border border-black/20"
+                      style={{ backgroundColor: item.colour_hex }}
+                    />
+                    <span className="capitalize">{item.colour_name || 'Colour'}</span>
+                  </>
+                )}
+                {item.size && (
+                  <>
+                    {item.colour_hex && <span className="text-gray-500">•</span>}
+                    <span>Size: {item.size}</span>
+                  </>
+                )}
+                {item.sku && <span className="text-gray-500 ml-1">SKU {item.sku}</span>}
               </div>
             )}
           </div>

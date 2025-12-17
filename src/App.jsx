@@ -23,6 +23,7 @@ import { AdminAuthProvider } from '@/contexts/AdminAuthContext'
 import { CustomerAuthProvider } from '@/contexts/CustomerAuthContext'
 import { CartProvider } from '@/contexts/CartContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
+import { ToastProvider } from '@/contexts/ToastContext'
 import UnifiedChatWidget from '@/components/UnifiedChatWidget'
 
 // Sample product data
@@ -330,7 +331,8 @@ function App() {
       <CustomerAuthProvider>
         <CartProvider>
           <WishlistProvider>
-            <Router>
+            <ToastProvider>
+              <Router>
               <Routes>
           {/* Home Page */}
           <Route path="/" element={<HomePage />} />
@@ -451,7 +453,8 @@ function App() {
           />
               </Routes>
               <UnifiedChatWidget />
-            </Router>
+              </Router>
+            </ToastProvider>
           </WishlistProvider>
         </CartProvider>
       </CustomerAuthProvider>
