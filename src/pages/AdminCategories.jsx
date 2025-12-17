@@ -21,13 +21,19 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import {
-  getAllCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-} from '@/services/categories'
 import { ImageDropzone } from '@/components/admin/ImageDropzone'
+
+const API_URL = '/.netlify/functions/categories-admin'
+
+async function fetchJSON(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || data?.success === false) throw new Error(data.error || res.statusText)
+  return data
+}
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState([])
@@ -40,8 +46,8 @@ const AdminCategories = () => {
   const loadCategories = async () => {
     setLoading(true)
     try {
-      const data = await getAllCategories()
-      setCategories(data)
+      const data = await fetchJSON(API_URL)
+      setCategories(data.categories || [])
     } catch (error) {
       console.error('Error loading categories:', error)
     } finally {
@@ -71,7 +77,7 @@ const CategoriesTable = ({ categories, onRefresh }) => {
   const handleDelete = async (id, name) => {
     if (confirm(`Are you sure you want to delete "${name}"? Products in this category will become uncategorized.`)) {
       try {
-        await deleteCategory(id)
+        await fetchJSON(`${API_URL}/${id}`, { method: 'DELETE' })
         onRefresh()
       } catch (error) {
         console.error('Error deleting category:', error)
@@ -259,9 +265,15 @@ const CategoryForm = ({ category, categories = [], onSuccess }) => {
       }
 
       if (category) {
-        await updateCategory(category.id, dataToSave)
+        await fetchJSON(`${API_URL}/${category.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(dataToSave)
+        })
       } else {
-        await createCategory(dataToSave)
+        await fetchJSON(API_URL, {
+          method: 'POST',
+          body: JSON.stringify(dataToSave)
+        })
       }
       onSuccess()
     } catch (error) {

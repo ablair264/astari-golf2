@@ -87,6 +87,17 @@ async function signedR2Request(method, key, body = null, contentType = 'applicat
   return { endpoint, headers }
 }
 
+// Helper to build sorted, encoded query string for AWS v4 signing
+function buildCanonicalQueryString(params) {
+  const entries = Object.entries(params)
+    .filter(([_, v]) => v !== undefined && v !== null)
+    .sort(([a], [b]) => a.localeCompare(b))
+
+  return entries
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&')
+}
+
 // List objects in R2 bucket
 async function listObjects(prefix = '') {
   const region = 'auto'
@@ -97,13 +108,16 @@ async function listObjects(prefix = '') {
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
   const dateStamp = amzDate.slice(0, 8)
 
-  // Build query string for listing
-  const params = new URLSearchParams({
-    'list-type': '2',
+  // Build query string for listing - must be sorted alphabetically for AWS v4
+  const queryParams = {
     'delimiter': '/',
-    ...(prefix && { 'prefix': prefix })
-  })
-  const queryString = params.toString()
+    'list-type': '2',
+  }
+  if (prefix) {
+    queryParams['prefix'] = prefix
+  }
+
+  const queryString = buildCanonicalQueryString(queryParams)
   const payloadHash = hash('')
 
   const signedHeaders = 'host;x-amz-content-sha256;x-amz-date'
