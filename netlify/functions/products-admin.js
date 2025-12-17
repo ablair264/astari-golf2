@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless'
+const { neon } = require('@neondatabase/serverless')
 
 const sql = neon(process.env.VITE_NEON_DATABASE_URL)
 
@@ -66,7 +66,7 @@ const buildConditions = (params) => {
   return { where, values }
 }
 
-export async function handler(event) {
+exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers }
 
   try {
