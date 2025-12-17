@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useMemo, useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   AlertTriangle,
   ChevronLeft,
@@ -10,8 +10,9 @@ import {
   Minus,
   Plus,
   Eye,
+  Check,
 } from 'lucide-react'
-import { cartUtils } from '@/contexts/CartContext'
+import { cartUtils, useCart } from '@/contexts/CartContext'
 
 const normalizeArray = (val) => {
   if (!val) return []
@@ -190,6 +191,11 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
   const [isHoveringImage, setIsHoveringImage] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [modalOpen, setModalOpen] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
+
+  const { isInCart, getCartItem } = useCart()
+  const inCart = isInCart(product.id)
+  const cartItem = getCartItem(product.id)
 
   const color = colorOptions[selectedColorIndex] || null
   const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5
@@ -206,7 +212,16 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
 
   const handleAddToCart = () => {
     onAddToCart?.(product, product, quantity)
+    setJustAdded(true)
   }
+
+  // Reset "just added" state after animation
+  useEffect(() => {
+    if (justAdded) {
+      const timer = setTimeout(() => setJustAdded(false), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [justAdded])
 
   return (
     <>
@@ -351,12 +366,68 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
             {/* Bottom Row: Add to Cart - Full Width */}
             <button
               onClick={(e) => { e.stopPropagation(); handleAddToCart() }}
-              className="relative w-full overflow-hidden rounded-xl h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] group/btn shadow-lg shadow-emerald-900/30 hover:shadow-xl hover:shadow-emerald-900/40"
+              className={`relative w-full overflow-hidden rounded-xl h-12 text-white flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] group/btn shadow-lg ${
+                justAdded
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-900/40'
+                  : inCart
+                    ? 'bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-emerald-500 shadow-emerald-900/30'
+                    : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-emerald-900/30 hover:shadow-xl hover:shadow-emerald-900/40'
+              }`}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-              <ShoppingCart size={19} className="relative z-10 transition-transform group-hover/btn:rotate-[-8deg] group-hover/btn:scale-110" strokeWidth={2.5} />
-              <span className="relative z-10 text-sm font-bold tracking-wide uppercase">Add to Cart</span>
+              <AnimatePresence mode="wait">
+                {justAdded ? (
+                  <motion.div
+                    key="added"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <Check size={19} className="relative z-10" strokeWidth={3} />
+                    <span className="relative z-10 text-sm font-bold tracking-wide uppercase">Added to Cart!</span>
+                  </motion.div>
+                ) : inCart ? (
+                  <motion.div
+                    key="in-cart"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <ShoppingCart size={19} className="relative z-10" strokeWidth={2.5} />
+                    <span className="relative z-10 text-sm font-bold tracking-wide uppercase">
+                      In Cart ({cartItem?.quantity || 0}) - Add More
+                    </span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="add"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <ShoppingCart size={19} className="relative z-10 transition-transform group-hover/btn:rotate-[-8deg] group-hover/btn:scale-110" strokeWidth={2.5} />
+                    <span className="relative z-10 text-sm font-bold tracking-wide uppercase">Add to Cart</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </button>
+
+            {/* Added to cart notification */}
+            <AnimatePresence>
+              {justAdded && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute -top-2 left-1/2 -translate-x-1/2 px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-full shadow-lg z-20"
+                >
+                  Added to cart!
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </motion.div>

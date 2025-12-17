@@ -12,8 +12,9 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
   const [isHovered, setIsHovered] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(null)
+  const [justAdded, setJustAdded] = useState(false)
 
-  const { addToCart, isInCart } = useCart()
+  const { addToCart, isInCart, getCartItem } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
 
   // Check if product is in wishlist
@@ -21,6 +22,15 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
 
   // Check if product is in cart
   const inCart = isInCart(product.id)
+  const cartItem = getCartItem(product.id)
+
+  // Reset "just added" state after animation
+  useEffect(() => {
+    if (justAdded) {
+      const timer = setTimeout(() => setJustAdded(false), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [justAdded])
 
   const handleQuantityChange = (change) => {
     setQuantity(Math.max(1, quantity + change))
@@ -49,6 +59,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
   const handleAddToCart = (e) => {
     e.stopPropagation()
     addToCart(product, quantity)
+    setJustAdded(true)
     // Reset quantity after adding to cart
     setQuantity(1)
   }
@@ -228,16 +239,23 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
                   <Button
                     className={cn(
                       "flex-1 rounded-full h-10 text-xs font-semibold transition-all",
-                      inCart
-                        ? "bg-green-500 text-white hover:bg-green-600"
-                        : "bg-white text-black hover:bg-white/90"
+                      justAdded
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                        : inCart
+                          ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                          : "bg-white text-black hover:bg-white/90"
                     )}
                     onClick={handleAddToCart}
                   >
-                    {inCart ? (
+                    {justAdded ? (
                       <>
                         <Check className="w-4 h-4 mr-2" />
-                        In Cart
+                        Added!
+                      </>
+                    ) : inCart ? (
+                      <>
+                        <ShoppingBag className="w-4 h-4 mr-2" />
+                        In Cart ({cartItem?.quantity}) - Add More
                       </>
                     ) : (
                       <>
