@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Package, AlertTriangle, ChevronUp, ChevronDown, History } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Package, AlertTriangle, ChevronUp, ChevronDown, History, Check, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const StockBadge = ({ quantity, reorderPoint }) => {
@@ -25,6 +25,91 @@ const StockBadge = ({ quantity, reorderPoint }) => {
   )
 }
 
+// Inline editable stock cell
+const InlineStockEdit = ({ product, onSave }) => {
+  const [isEditing, setIsEditing] = useState(false)
+  const [value, setValue] = useState(product.stock_quantity ?? 0)
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    setValue(product.stock_quantity ?? 0)
+  }, [product.stock_quantity])
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
+
+  const handleSave = async () => {
+    const newValue = parseInt(value) || 0
+    if (newValue === product.stock_quantity) {
+      setIsEditing(false)
+      return
+    }
+
+    setSaving(true)
+    try {
+      await onSave(product.id, newValue)
+      setIsEditing(false)
+    } catch (err) {
+      console.error('Failed to save:', err)
+      setValue(product.stock_quantity ?? 0)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setValue(product.stock_quantity ?? 0)
+    setIsEditing(false)
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSave()
+    } else if (e.key === 'Escape') {
+      handleCancel()
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center justify-center gap-1">
+        <input
+          ref={inputRef}
+          type="number"
+          min="0"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSave}
+          disabled={saving}
+          className="w-16 px-2 py-1 text-center text-lg font-bold bg-white/10 border border-emerald-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+        />
+        {saving && <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />}
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setIsEditing(true)}
+      className={cn(
+        'px-3 py-1 rounded-lg text-lg font-bold transition-all hover:bg-white/10 hover:ring-2 hover:ring-white/20 cursor-text',
+        product.stock_quantity === 0 ? 'text-red-400' :
+        product.stock_quantity <= product.reorder_point ? 'text-amber-400' :
+        'text-white'
+      )}
+      title="Click to edit"
+    >
+      {product.stock_quantity ?? 0}
+    </button>
+  )
+}
+
 const StockTable = ({
   products,
   selectedIds,
@@ -33,6 +118,7 @@ const StockTable = ({
   sortBy,
   sortDir,
   onViewHistory,
+  onStockUpdate,
   loading
 }) => {
   const allSelected = products.length > 0 && products.every(p => selectedIds.includes(p.id))
@@ -95,6 +181,10 @@ const StockTable = ({
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+      {/* Hint */}
+      <div className="px-4 py-2 bg-white/5 border-b border-white/10 text-xs text-white/40">
+        Tip: Click on any stock number to edit it directly
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -173,14 +263,7 @@ const StockTable = ({
                   <span className="text-sm text-white/60">{product.brand_name || '-'}</span>
                 </td>
                 <td className="p-4 text-center">
-                  <span className={cn(
-                    'text-lg font-bold',
-                    product.stock_quantity === 0 ? 'text-red-400' :
-                    product.stock_quantity <= product.reorder_point ? 'text-amber-400' :
-                    'text-white'
-                  )}>
-                    {product.stock_quantity ?? 0}
-                  </span>
+                  <InlineStockEdit product={product} onSave={onStockUpdate} />
                 </td>
                 <td className="p-4 text-center">
                   <span className="text-sm text-white/50">{product.reorder_point ?? 10}</span>

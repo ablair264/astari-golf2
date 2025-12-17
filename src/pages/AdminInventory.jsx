@@ -132,6 +132,35 @@ const AdminInventory = () => {
     setHistoryModalOpen(true)
   }
 
+  // Inline single stock update
+  const handleStockUpdate = async (productId, newQuantity) => {
+    try {
+      const res = await fetch(`${API_BASE}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productIds: [productId],
+          adjustmentType: 'set',
+          quantity: newQuantity,
+          reason: 'Inline edit',
+          createdBy: 'admin'
+        })
+      })
+      const data = await res.json()
+      if (!data.success) {
+        throw new Error(data.error || 'Update failed')
+      }
+      // Update local state immediately for responsive UI
+      setProducts(prev => prev.map(p =>
+        p.id === productId ? { ...p, stock_quantity: newQuantity } : p
+      ))
+      // Refresh stats in background
+      loadStats()
+    } catch (err) {
+      throw err
+    }
+  }
+
   const selectedProducts = products.filter(p => selectedIds.includes(p.id))
 
   return (
@@ -226,6 +255,7 @@ const AdminInventory = () => {
           sortBy={sortBy}
           sortDir={sortDir}
           onViewHistory={handleViewHistory}
+          onStockUpdate={handleStockUpdate}
           loading={loading}
         />
       </div>
