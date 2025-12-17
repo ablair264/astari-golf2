@@ -10,7 +10,11 @@ import OrderConfirmationPage from '@/pages/OrderConfirmationPage'
 import AdminDashboard from '@/pages/AdminDashboard'
 import AdminProducts from '@/pages/AdminProducts'
 import AdminBrands from '@/pages/AdminBrands'
+import AdminMargins from '@/pages/AdminMargins'
 import AdminLogin from '@/pages/AdminLogin'
+import AdminCustomers from '@/pages/AdminCustomers'
+import AdminCustomerMap from '@/pages/AdminCustomerMap'
+import AdminLiveChat from '@/pages/AdminLiveChat'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext'
 import { CustomerAuthProvider } from '@/contexts/CustomerAuthContext'
@@ -361,6 +365,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminBrands />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/margins"
+            element={
+              <ProtectedRoute>
+                <AdminMargins />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/customers"
+            element={
+              <ProtectedRoute>
+                <AdminCustomers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/customers/map"
+            element={
+              <ProtectedRoute>
+                <AdminCustomerMap />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/livechat"
+            element={
+              <ProtectedRoute>
+                <AdminLiveChat />
               </ProtectedRoute>
             }
           />

@@ -111,7 +111,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
             <div className="flex justify-between items-center">
               {/* Price */}
               <span className="text-white text-3xl font-medium drop-shadow-lg">
-                £{product.price}
+                £{product.final_price ?? product.calculated_price ?? product.price}
               </span>
 
               {/* Action Buttons - Always visible */}
@@ -169,7 +169,7 @@ const ProductCard = ({ product, isExpanded = false, onToggleExpand }) => {
                   </h2>
                   <div className="pt-1">
                     <span className="text-white text-3xl md:text-4xl font-medium drop-shadow-lg">
-                      £{product.price}
+                      £{product.final_price ?? product.calculated_price ?? product.price}
                     </span>
                   </div>
                 </div>

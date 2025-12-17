@@ -80,8 +80,7 @@ export async function handler(event) {
       const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200)
       const offset = params.get('cursor') ? Number(params.get('cursor')) : 0
       const { where, values } = buildConditions(params)
-      const rows = await sql({
-        text: `
+      const rows = await sql(`
         SELECT
           COALESCE(b.name, 'Unbranded') AS brand,
           COUNT(DISTINCT p.style_no) AS style_count,
@@ -97,9 +96,7 @@ export async function handler(event) {
         GROUP BY COALESCE(b.name, 'Unbranded')
         ORDER BY brand ASC
         LIMIT ${limit + 1} OFFSET ${offset}
-      `,
-        values,
-      })
+      `, values)
       const hasMore = rows.length > limit
       const data = hasMore ? rows.slice(0, limit) : rows
       const nextCursor = hasMore ? offset + limit : null
@@ -126,8 +123,7 @@ export async function handler(event) {
         values.push(`%${search}%`)
         where += ` AND (CAST(p.style_no AS TEXT) ILIKE $${values.length} OR p.name ILIKE $${values.length})`
       }
-      const rows = await sql({
-        text: `
+      const rows = await sql(`
           SELECT DISTINCT p.style_no,
             MIN(p.name) AS style_name,
             MAX(b.name) AS brand
@@ -137,9 +133,7 @@ export async function handler(event) {
           GROUP BY p.style_no
           ORDER BY p.style_no
           LIMIT ${limit}
-        `,
-        values,
-      })
+        `, values)
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, styles: rows }) }
     }
 
@@ -152,17 +146,14 @@ export async function handler(event) {
         values.push(`%${search}%`)
         where += ` AND (p.sku ILIKE $${values.length} OR p.name ILIKE $${values.length})`
       }
-      const rows = await sql({
-        text: `
+      const rows = await sql(`
           SELECT DISTINCT p.sku, p.name, b.name AS brand
           FROM products p
           LEFT JOIN brands b ON b.id = p.brand_id
           ${where}
           ORDER BY p.sku
           LIMIT ${limit}
-        `,
-        values,
-      })
+        `, values)
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, skus: rows }) }
     }
 
@@ -172,8 +163,7 @@ export async function handler(event) {
       const cursorRaw = params.get('cursor')
       const offset = cursorRaw && !Number.isNaN(Number(cursorRaw)) ? Number(cursorRaw) : 0
       const { where, values } = buildConditions(params)
-      const rows = await sql({
-        text: `
+      const rows = await sql(`
         SELECT
           COALESCE(c.name, 'Uncategorized') AS product_type,
           COUNT(DISTINCT p.style_no) AS style_count,
@@ -189,9 +179,7 @@ export async function handler(event) {
         GROUP BY COALESCE(c.name, 'Uncategorized')
         ORDER BY product_type ASC
         LIMIT ${limit + 1} OFFSET ${offset}
-      `,
-        values,
-      })
+      `, values)
       const hasMore = rows.length > limit
       const data = hasMore ? rows.slice(0, limit) : rows
       const nextCursor = hasMore ? offset + limit : null
@@ -204,8 +192,7 @@ export async function handler(event) {
       const cursorRaw = params.get('cursor')
       const offset = cursorRaw && !Number.isNaN(Number(cursorRaw)) ? Number(cursorRaw) : 0
       const { where, values } = buildConditions(params)
-      const rows = await sql({
-        text: `
+      const rows = await sql(`
         SELECT
           p.style_no AS style_code,
           MIN(p.name) AS style_name,
@@ -223,12 +210,10 @@ export async function handler(event) {
         LEFT JOIN brands b ON b.id = p.brand_id
         LEFT JOIN categories c ON c.id = p.category_id
         ${where}
-        GROUP BY p.style_no, brand, product_type
+        GROUP BY p.style_no, COALESCE(b.name, 'Unbranded'), COALESCE(c.name, 'Uncategorized')
         ORDER BY style_code ASC
         LIMIT ${limit + 1} OFFSET ${offset}
-      `,
-        values,
-      })
+      `, values)
       const hasMore = rows.length > limit
       const data = hasMore ? rows.slice(0, limit) : rows
       const nextCursor = hasMore ? offset + limit : null
@@ -250,8 +235,7 @@ export async function handler(event) {
       }
       const order = `ORDER BY ${sortBy} ${sortDir}`
 
-      const rows = await sql({
-        text: `
+      const rows = await sql(`
         SELECT p.*, c.name AS category, b.name AS brand
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
@@ -259,9 +243,7 @@ export async function handler(event) {
         ${whereClause}
         ${order}
         LIMIT ${limit + 1}
-      `,
-        values,
-      })
+      `, values)
       const hasMore = rows.length > limit
       const data = hasMore ? rows.slice(0, limit) : rows
       const nextCursor = hasMore ? data[data.length - 1].id : null
@@ -293,8 +275,7 @@ export async function handler(event) {
       const margin = Number(marginPercentage)
       const placeholders = skuCodes.map((_, i) => `$${i + 1}`).join(', ')
 
-      const result = await sql({
-        text: `
+      const result = await sql(`
           UPDATE products
           SET
             margin_percentage = ${margin},
@@ -307,9 +288,7 @@ export async function handler(event) {
             updated_at = NOW()
           WHERE sku IN (${placeholders})
           RETURNING sku
-        `,
-        values: skuCodes
-      })
+        `, skuCodes)
 
       return {
         statusCode: 200,
@@ -330,8 +309,7 @@ export async function handler(event) {
       const discount = Number(discountPercentage) || 0
       const placeholders = skuCodes.map((_, i) => `$${i + 1}`).join(', ')
 
-      const result = await sql({
-        text: `
+      const result = await sql(`
           UPDATE products
           SET
             is_special_offer = true,
@@ -341,9 +319,7 @@ export async function handler(event) {
             updated_at = NOW()
           WHERE sku IN (${placeholders})
           RETURNING sku
-        `,
-        values: skuCodes
-      })
+        `, skuCodes)
 
       return {
         statusCode: 200,
@@ -363,8 +339,7 @@ export async function handler(event) {
 
       const placeholders = skuCodes.map((_, i) => `$${i + 1}`).join(', ')
 
-      const result = await sql({
-        text: `
+      const result = await sql(`
           UPDATE products
           SET
             is_special_offer = false,
@@ -374,9 +349,7 @@ export async function handler(event) {
             updated_at = NOW()
           WHERE sku IN (${placeholders})
           RETURNING sku
-        `,
-        values: skuCodes
-      })
+        `, skuCodes)
 
       return {
         statusCode: 200,
@@ -416,15 +389,64 @@ export async function handler(event) {
       }
 
       values.push(styleNo)
-      const result = await sql({
-        text: `UPDATE products SET ${updates.join(', ')} WHERE style_no = $${values.length} RETURNING sku`,
-        values
-      })
+      const result = await sql(`UPDATE products SET ${updates.join(', ')} WHERE style_no = $${values.length} RETURNING sku`, values)
 
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({ success: true, updated: result.length, styleNo })
+      }
+    }
+
+    // Create new product
+    if (method === 'POST' && (path === '' || path === '/')) {
+      const data = JSON.parse(event.body || '{}')
+      const {
+        name, sku, style_no, brand_id, category_id, price,
+        description, image_url, images, colour_name, colour_hex,
+        stock_quantity
+      } = data
+
+      if (!name) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'name is required' }) }
+      }
+      if (!sku) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'sku is required' }) }
+      }
+
+      // Generate slug from name
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+      const result = await sql`
+        INSERT INTO products (
+          name, slug, sku, style_no, brand_id, category_id, price,
+          description, image_url, images, colour_name, colour_hex,
+          stock_quantity, is_active, created_at, updated_at
+        ) VALUES (
+          ${name},
+          ${slug},
+          ${sku},
+          ${style_no || null},
+          ${brand_id || null},
+          ${category_id || null},
+          ${parseFloat(price) || 0},
+          ${description || null},
+          ${image_url || null},
+          ${images ? JSON.stringify(images) : null},
+          ${colour_name || null},
+          ${colour_hex || null},
+          ${parseInt(stock_quantity) || 0},
+          true,
+          NOW(),
+          NOW()
+        )
+        RETURNING *
+      `
+
+      return {
+        statusCode: 201,
+        headers,
+        body: JSON.stringify({ success: true, product: result[0] })
       }
     }
 
@@ -443,8 +465,7 @@ export async function handler(event) {
       }
       const order = `ORDER BY ${sortBy} ${sortDir}`
 
-      const rows = await sql({
-        text: `
+      const rows = await sql(`
         SELECT p.*, c.name AS category, b.name AS brand
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
@@ -452,9 +473,7 @@ export async function handler(event) {
         ${whereClause}
         ${order}
         LIMIT ${limit + 1}
-      `,
-        values,
-      })
+      `, values)
       const hasMore = rows.length > limit
       const data = hasMore ? rows.slice(0, limit) : rows
       const nextCursor = hasMore ? data[data.length - 1].id : null
@@ -490,7 +509,7 @@ export async function handler(event) {
       const updates = ['updated_at = NOW()']
       if (marginPercentage !== undefined) {
         updates.push(`margin_percentage = ${Number(marginPercentage)}`)
-        updates.push(`calculated_price = ROUND(price * (1 + ${Number(marginPercentage)}/100), 2)`)
+        updates.push(`calculated_price = ROUND(price * (1 + ${Number(marginPercentage)}/100.0), 2)`)
       }
       if (isSpecialOffer !== undefined) {
         updates.push(`is_special_offer = ${isSpecialOffer ? 'true' : 'false'}`)
@@ -502,8 +521,8 @@ export async function handler(event) {
         final_price = CASE
           WHEN ${isSpecialOffer !== undefined ? (isSpecialOffer ? 'true' : 'false') : 'is_special_offer'}
                AND ${offerDiscountPercentage !== undefined ? (offerDiscountPercentage === null ? 'NULL' : Number(offerDiscountPercentage)) : 'offer_discount_percentage'} IS NOT NULL
-          THEN ROUND(COALESCE(${marginPercentage !== undefined ? `price * (1 + ${Number(marginPercentage)}/100)` : 'calculated_price'}, price) * (1 - ${offerDiscountPercentage !== undefined ? (offerDiscountPercentage === null ? '0' : Number(offerDiscountPercentage)) : 'offer_discount_percentage'}/100), 2)
-          ELSE COALESCE(${marginPercentage !== undefined ? `ROUND(price * (1 + ${Number(marginPercentage)}/100), 2)` : 'calculated_price'}, price)
+          THEN ROUND(COALESCE(${marginPercentage !== undefined ? `price * (1 + ${Number(marginPercentage)}/100.0)` : 'calculated_price'}, price) * (1 - ${offerDiscountPercentage !== undefined ? (offerDiscountPercentage === null ? '0' : Number(offerDiscountPercentage)) : 'offer_discount_percentage'}/100.0), 2)
+          ELSE COALESCE(${marginPercentage !== undefined ? `ROUND(price * (1 + ${Number(marginPercentage)}/100.0), 2)` : 'calculated_price'}, price)
         END
       `
       updates.push(finalPrice)

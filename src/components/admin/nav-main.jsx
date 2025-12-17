@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -21,7 +22,63 @@ import {
 export default function DashboardNavigation({ routes = [] }) {
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
-  const [activeRoute, setActiveRoute] = useState(routes[0]?.id)
+  const location = useLocation()
+
+  // Determine active route based on current URL
+  const getActiveRouteFromPath = () => {
+    const path = location.pathname
+    const search = location.search
+    const fullPath = path + search
+
+    // Check sub-items first (more specific)
+    for (const route of routes) {
+      if (route.subs) {
+        for (const sub of route.subs) {
+          if (sub.link === fullPath || sub.link === path) {
+            return route.id
+          }
+        }
+      }
+    }
+
+    // Find best matching route (most specific first)
+    const match = routes.find(route => {
+      if (route.link === fullPath) return true
+      if (route.link === path) return true
+      // Match /admin/products for products route
+      if (path.startsWith(route.link) && route.link !== '/admin') return true
+      return false
+    })
+
+    // Default to home if on /admin exactly, otherwise try to match
+    if (path === '/admin' && !search) return 'home'
+
+    return match?.id || routes[0]?.id
+  }
+
+  // Track which sub-item is active
+  const getActiveSubItem = () => {
+    const path = location.pathname
+    for (const route of routes) {
+      if (route.subs) {
+        for (const sub of route.subs) {
+          if (sub.link === path) {
+            return sub.link
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  const activeSubItem = getActiveSubItem()
+
+  const [activeRoute, setActiveRoute] = useState(getActiveRouteFromPath)
+
+  // Update active route when location changes
+  useEffect(() => {
+    setActiveRoute(getActiveRouteFromPath())
+  }, [location.pathname, location.search])
 
   return (
     <SidebarGroup>
@@ -55,16 +112,24 @@ export default function DashboardNavigation({ routes = [] }) {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {route.subs.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <a href={subItem.link}>
-                              {subItem.icon}
-                              <span>{subItem.title}</span>
-                            </a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                      {route.subs.map((subItem) => {
+                        const isSubActive = activeSubItem === subItem.link
+                        return (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton
+                              asChild
+                              className={cn(
+                                isSubActive && "bg-emerald-500/20 text-emerald-300"
+                              )}
+                            >
+                              <a href={subItem.link}>
+                                {subItem.icon}
+                                <span>{subItem.title}</span>
+                              </a>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )
+                      })}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>

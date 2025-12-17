@@ -66,7 +66,7 @@ const MobileProductSheet = ({ product, onClose, onAddToCart }) => {
                 <p className="text-sm text-white/60 mb-2">{selectedVariant.category_name || product.category_name}</p>
               )}
               <div className="text-2xl font-bold text-white">
-                {cartUtils.formatPrice(parseFloat(selectedVariant.price ?? product.price_min ?? product.price))}
+                {cartUtils.formatPrice(parseFloat(selectedVariant.final_price ?? selectedVariant.calculated_price ?? selectedVariant.price ?? product.price_min ?? product.price))}
               </div>
             </div>
 

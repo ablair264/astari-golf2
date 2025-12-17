@@ -112,13 +112,15 @@ export const CartProvider = ({ children }) => {
         }
         return updatedCart
       } else {
-        // Add new item
+        // Add new item - use final_price (with margin) if available
         return [
           ...prevCart,
           {
             id: product.id,
             name: product.name,
-            price: parseFloat(product.price ?? product.price_min ?? 0),
+            price: parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? product.price_min ?? 0),
+            final_price: product.final_price,
+            calculated_price: product.calculated_price,
             brand: product.brand_name || product.brand,
             brand_logo: product.brand_logo,
             category: product.category_name || product.category,

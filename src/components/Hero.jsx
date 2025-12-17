@@ -171,7 +171,7 @@ const Hero = () => {
 
             {/* Main Heading */}
             <div ref={subheadingRef} className="space-y-4 mb-8">
-              <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight text-white">
+              <h1 className="text-4xl md:text-5xl lg:text-9xl font-bold tracking-tight text-white">
                 {currentSlideData.heading}
               </h1>
               <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white/90">

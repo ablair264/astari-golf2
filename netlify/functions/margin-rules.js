@@ -23,13 +23,12 @@ const applyRuleToProducts = async (rule) => {
     UPDATE products p
     SET
       margin_percentage = ${margin},
-      calculated_price = ROUND(price * (1 + ${margin}/100), 2),
+      calculated_price = ROUND(price * (1 + ${margin}/100.0), 2),
       final_price = CASE
         WHEN is_special_offer AND offer_discount_percentage IS NOT NULL
-          THEN ROUND(ROUND(price * (1 + ${margin}/100), 2) * (1 - offer_discount_percentage/100), 2)
-        ELSE ROUND(price * (1 + ${margin}/100), 2)
+          THEN ROUND(ROUND(price * (1 + ${margin}/100.0), 2) * (1 - offer_discount_percentage/100.0), 2)
+        ELSE ROUND(price * (1 + ${margin}/100.0), 2)
       END,
-      applied_rule_id = ${rule.id},
       updated_at = NOW()
     ${where}
   `

@@ -1,18 +1,20 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
-import { Search, X, Filter, Grid3x3, List, ChevronDown } from 'lucide-react'
+import { Search, X, Filter, Grid3x3, List, ChevronDown, Hand } from 'lucide-react'
 import { getAllProducts, getCategories, getPriceRange } from '@/services/products'
 import { useCart, cartUtils } from '@/contexts/CartContext'
 import ProductCard from './ProductCard'
 import MobileFilterBar from './MobileFilterBar'
 import MobileRowCard from './MobileRowCard'
 import MobileProductSheet from './MobileProductSheet'
+import { GripSelectorModal } from './GripSizer'
 
 const ProductBrowser = () => {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showGripSizer, setShowGripSizer] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [selectedBrand, setSelectedBrand] = useState(null)
@@ -110,9 +112,10 @@ const ProductBrowser = () => {
 
     return Array.from(map.entries()).map(([key, entry]) => {
       const primary = entry.variants[0]
-      const prices = entry.variants.map(v => parseFloat(v.price)).filter(p => !Number.isNaN(p))
-      const priceMin = prices.length ? Math.min(...prices) : primary.price
-      const priceMax = prices.length ? Math.max(...prices) : primary.price
+      // Use final_price (with margin applied) instead of cost price
+      const prices = entry.variants.map(v => parseFloat(v.final_price || v.calculated_price || v.price)).filter(p => !Number.isNaN(p))
+      const priceMin = prices.length ? Math.min(...prices) : parseFloat(primary.final_price || primary.calculated_price || primary.price)
+      const priceMax = prices.length ? Math.max(...prices) : parseFloat(primary.final_price || primary.calculated_price || primary.price)
       const totalStock = entry.variants.reduce((sum, v) => sum + (v.stock_quantity || 0), 0)
 
       return {
@@ -176,22 +179,31 @@ const ProductBrowser = () => {
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">Astari Product Browser</p>
               <h1 className="text-2xl font-bold text-white">Performance gear, refined</h1>
             </div>
-            <div className="hidden md:flex items-center gap-2 bg-white/5 rounded-full px-2 py-1 border border-white/10">
+            <div className="hidden md:flex items-center gap-3">
               <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-emerald-500/20 text-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]' : 'text-white/70 hover:text-white'}`}
-                aria-label="Grid view"
+                onClick={() => setShowGripSizer(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all text-sm font-medium"
               >
-                <Grid3x3 className="w-5 h-5" />
+                <Hand className="w-4 h-4" />
+                GripSizer
               </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-full transition-all ${viewMode === 'list' ? 'bg-emerald-500/20 text-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]' : 'text-white/70 hover:text-white'}`}
-                aria-label="List view"
-              >
-                <List className="w-5 h-5" />
-              </button>
-              <div className="hidden lg:flex items-center text-xs text-white/60 pl-3">{filteredProducts.length} items</div>
+              <div className="flex items-center gap-2 bg-white/5 rounded-full px-2 py-1 border border-white/10">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-emerald-500/20 text-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]' : 'text-white/70 hover:text-white'}`}
+                  aria-label="Grid view"
+                >
+                  <Grid3x3 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-full transition-all ${viewMode === 'list' ? 'bg-emerald-500/20 text-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]' : 'text-white/70 hover:text-white'}`}
+                  aria-label="List view"
+                >
+                  <List className="w-5 h-5" />
+                </button>
+                <div className="hidden lg:flex items-center text-xs text-white/60 pl-3">{filteredProducts.length} items</div>
+              </div>
             </div>
             <button
               onClick={() => setShowFilters(true)}
@@ -402,6 +414,12 @@ const ProductBrowser = () => {
           onAddToCart={handleAddToCart}
         />
       )}
+
+      {/* GripSizer Modal */}
+      <GripSelectorModal
+        isOpen={showGripSizer}
+        onClose={() => setShowGripSizer(false)}
+      />
     </div>
   )
 }
@@ -468,7 +486,7 @@ const ExpandedRow = ({ product, onAddToCart, onSelectVariant, expanded, onExpand
     () => variants.find((v) => v.id === activeVariantId) || variants[0] || product,
     [variants, activeVariantId, product]
   )
-  const price = activeVariant.price ?? product.price_min ?? product.price
+  const price = activeVariant.final_price ?? activeVariant.calculated_price ?? activeVariant.price ?? product.price_min ?? product.price
   const image = activeVariant.image_url || product.image_url || '/products/1.png'
 
   return (

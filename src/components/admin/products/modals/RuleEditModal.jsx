@@ -114,7 +114,7 @@ export default function RuleEditModal({ open, onClose, rule, onSave }) {
             <input
               value={form.name || ''}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
               required
             />
           </div>
@@ -159,7 +159,7 @@ export default function RuleEditModal({ open, onClose, rule, onSave }) {
                 type="number"
                 value={form.margin_percentage ?? ''}
                 onChange={(e) => setForm((p) => ({ ...p, margin_percentage: e.target.value }))}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 required
               />
             </div>
@@ -224,7 +224,7 @@ export default function RuleEditModal({ open, onClose, rule, onSave }) {
 
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg border border-white/15 text-white hover:bg-white/5">Cancel</button>
-            <button type="submit" disabled={saving} className="px-3 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold hover:from-purple-400 hover:to-purple-600 disabled:opacity-60">
+            <button type="submit" disabled={saving} className="px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold hover:from-emerald-400 hover:to-emerald-600 disabled:opacity-60">
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>

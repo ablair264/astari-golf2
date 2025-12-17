@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { ImageDropzone } from '@/components/admin/ImageDropzone'
-import { createProduct, updateProduct } from '@/services/products'
+
+const API_BASE = '/.netlify/functions/products-admin'
 
 // Mode: 'create' | 'style' | 'variant'
 // - create: Full form for new product
@@ -9,8 +10,9 @@ import { createProduct, updateProduct } from '@/services/products'
 // - variant: Edit variant-level fields: price, stock, colour, individual image
 
 export function ProductFormModal({ open, onClose, product, brands = [], categories = [], mode = 'create', onSaved }) {
-  const isEdit = Boolean(product)
+  const isEdit = Boolean(product?.id || product?.sku)
   const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState({ type: null, message: '' }) // 'success' | 'error' | null
   const [form, setForm] = useState({
     name: '',
     price: '',
@@ -72,6 +74,8 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
         stock_quantity: '',
       })
     }
+    // Reset status when modal opens/closes
+    setStatus({ type: null, message: '' })
   }, [product, open])
 
   const handleChange = (field, value) => {
@@ -89,11 +93,15 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
+    setStatus({ type: null, message: '' })
 
     try {
+      let res
+      let successMessage = ''
+
       if (mode === 'style' && product?.style_no) {
         // Style-level update: PUT /products-admin/style/:styleNo
-        const res = await fetch(`/.netlify/functions/products-admin/style/${product.style_no}`, {
+        res = await fetch(`${API_BASE}/style/${product.style_no}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -103,34 +111,75 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
             category_id: form.category_id || null
           })
         })
-        if (!res.ok) throw new Error('Failed to update style')
+        successMessage = 'Style updated successfully'
       } else if (mode === 'variant' && product?.sku) {
-        // Variant-level update
-        await updateProduct(product.id || product.sku, {
-          price: form.price,
-          colour_name: form.colour_name,
-          colour_hex: form.colour_hex,
-          stock_quantity: form.stock_quantity,
-          image_url: form.images[0] || form.image_url
+        // Variant-level update: PUT /products-admin/:sku
+        res = await fetch(`${API_BASE}/${product.sku}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            price: parseFloat(form.price) || undefined,
+            colour_name: form.colour_name || undefined,
+            colour_hex: form.colour_hex || undefined,
+            stock_quantity: parseInt(form.stock_quantity) || undefined,
+            image_url: form.images[0] || form.image_url || undefined
+          })
         })
-      } else if (isEdit) {
+        successMessage = 'Variant updated successfully'
+      } else if (isEdit && product?.sku) {
         // Full product update
-        await updateProduct(product.id || product.sku, {
-          ...form,
-          image_url: form.images[0] || form.image_url
+        res = await fetch(`${API_BASE}/${product.sku}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            image_url: form.images[0] || form.image_url
+          })
         })
+        successMessage = 'Product updated successfully'
       } else {
         // Create new product
-        await createProduct({
-          ...form,
-          image_url: form.images[0] || form.image_url
+        res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name,
+            sku: form.sku,
+            style_no: form.style_no || null,
+            brand_id: form.brand_id || null,
+            category_id: form.category_id || null,
+            price: parseFloat(form.price) || 0,
+            description: form.description || null,
+            image_url: form.images[0] || form.image_url || null,
+            images: form.images,
+            colour_name: form.colour_name || null,
+            colour_hex: form.colour_hex || null,
+            stock_quantity: parseInt(form.stock_quantity) || 0
+          })
         })
+        successMessage = 'Product created successfully'
       }
+
+      const data = await res.json()
+
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || 'Operation failed')
+      }
+
+      setStatus({ type: 'success', message: successMessage })
+
+      // Call onSaved callback to refresh list
       onSaved?.()
-      onClose()
+
+      // Close modal after short delay to show success message
+      setTimeout(() => {
+        onClose()
+        setStatus({ type: null, message: '' })
+      }, 1000)
+
     } catch (err) {
       console.error('Save failed', err)
-      alert('Failed to save: ' + (err.message || 'Unknown error'))
+      setStatus({ type: 'error', message: err.message || 'Failed to save' })
     } finally {
       setSaving(false)
     }
@@ -170,6 +219,24 @@ export function ProductFormModal({ open, onClose, product, brands = [], categori
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
+          {/* Status Message */}
+          {status.type && (
+            <div
+              className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                status.type === 'success'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
+              }`}
+            >
+              {status.type === 'success' ? (
+                <CheckCircle className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              {status.message}
+            </div>
+          )}
+
           {/* Style-level fields */}
           {(mode === 'style' || mode === 'create') && (
             <>

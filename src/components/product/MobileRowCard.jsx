@@ -60,7 +60,7 @@ const MobileRowCard = ({ product, onAddToCart, onClick }) => {
 
         <div className="flex items-center justify-between">
           <div className="text-lg font-bold text-white">
-            {cartUtils.formatPrice(parseFloat(product.price_min ?? product.price))}
+            {cartUtils.formatPrice(parseFloat(product.final_price_min ?? product.price_min ?? product.final_price ?? product.calculated_price ?? product.price))}
           </div>
           <button
             onClick={(e) => {

@@ -15,6 +15,10 @@ import {
   Users,
   Settings,
   Home,
+  Percent,
+  Map,
+  List,
+  MessageCircle,
 } from "lucide-react"
 import { Logo } from "./logo"
 import DashboardNavigation from "./nav-main"
@@ -56,7 +60,18 @@ export const dashboardRoutes = [
     id: "products",
     title: "Products",
     icon: <Package2 className="size-4" />,
-    link: "/admin/products",
+    subs: [
+      {
+        title: "Product Manager",
+        icon: <Package2 className="size-3" />,
+        link: "/admin/products",
+      },
+      {
+        title: "Margin Manager",
+        icon: <Percent className="size-3" />,
+        link: "/admin/margins",
+      },
+    ],
   },
   {
     id: "brands",
@@ -68,13 +83,30 @@ export const dashboardRoutes = [
     id: "customers",
     title: "Customers",
     icon: <Users className="size-4" />,
-    link: "/admin?tab=customers",
+    subs: [
+      {
+        title: "Customer List",
+        icon: <List className="size-3" />,
+        link: "/admin/customers",
+      },
+      {
+        title: "Customer Map",
+        icon: <Map className="size-3" />,
+        link: "/admin/customers/map",
+      },
+    ],
   },
   {
     id: "orders",
     title: "Orders",
     icon: <ShoppingBag className="size-4" />,
     link: "/admin?tab=orders",
+  },
+  {
+    id: "livechat",
+    title: "LiveChat",
+    icon: <MessageCircle className="size-4" />,
+    link: "/admin/livechat",
   },
   {
     id: "settings",
@@ -105,7 +137,7 @@ export function DashboardSidebar() {
         <a href="/admin" className="flex items-center gap-2">
           <Logo className="h-8 w-8" />
           {!isCollapsed && (
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-white admin-heading">
               Astari
             </span>
           )}

@@ -85,8 +85,8 @@ export function ProductTypesView() {
       header: 'Product Type',
       cell: (info) => (
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-500/20">
-            <Layers className="w-4 h-4 text-purple-400" />
+          <div className="p-2 rounded-lg bg-emerald-500/20">
+            <Layers className="w-4 h-4 text-emerald-400" />
           </div>
           <span className="font-medium text-white">{info.getValue()}</span>
         </div>
@@ -104,8 +104,8 @@ export function ProductTypesView() {
       header: 'Avg Margin',
       cell: (info) => (
         <div className="flex items-center gap-1.5">
-          <Percent className="w-3 h-3 text-purple-400" />
-          <span className="text-purple-300">{parseFloat(info.getValue() || '0').toFixed(1)}%</span>
+          <Percent className="w-3 h-3 text-emerald-400" />
+          <span className="text-emerald-300">{parseFloat(info.getValue() || '0').toFixed(1)}%</span>
         </div>
       ),
     }),
@@ -138,7 +138,7 @@ export function ProductTypesView() {
   if (loading && data.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
       </div>
     )
   }

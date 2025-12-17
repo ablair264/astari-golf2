@@ -127,7 +127,7 @@ export default function ApplyRuleModal({ open, onClose, selectedSkus = [], onSuc
               onClick={() => { setMode('existing'); setPreview(null); }}
               className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                 mode === 'existing'
-                  ? 'bg-purple-500/20 text-purple-300 shadow-sm'
+                  ? 'bg-emerald-500/20 text-emerald-300 shadow-sm'
                   : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -162,7 +162,7 @@ export default function ApplyRuleModal({ open, onClose, selectedSkus = [], onSuc
                 <select
                   value={selectedRuleId}
                   onChange={(e) => { setSelectedRuleId(e.target.value); setPreview(null); }}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 >
                   <option value="" className="bg-[#0f1621]">Choose a rule...</option>
                   {rules.map((rule) => (
@@ -181,7 +181,7 @@ export default function ApplyRuleModal({ open, onClose, selectedSkus = [], onSuc
                       <div className="space-y-1">
                         <div className="flex justify-between">
                           <span className="text-white/60">Margin:</span>
-                          <span className="font-medium text-purple-300">+{rule.margin_percentage}%</span>
+                          <span className="font-medium text-emerald-300">+{rule.margin_percentage}%</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-white/60">Type:</span>
@@ -265,7 +265,7 @@ export default function ApplyRuleModal({ open, onClose, selectedSkus = [], onSuc
             <button
               onClick={handlePreview}
               disabled={previewing || (mode === 'existing' && !selectedRuleId) || (mode === 'custom' && !customMargin)}
-              className="px-5 py-2.5 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {previewing && <Loader2 className="w-4 h-4 animate-spin" />}
               Preview Impact

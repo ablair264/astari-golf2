@@ -9,7 +9,7 @@ export function Breadcrumbs({ className = '' }) {
     <nav className={`flex items-center flex-wrap gap-1 text-sm ${className}`} aria-label="Breadcrumb">
       <button
         onClick={resetNavigation}
-        className="p-1.5 rounded-md text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
+        className="p-1.5 rounded-md text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
         title="Reset to start"
       >
         <Home className="w-4 h-4" />
@@ -22,7 +22,7 @@ export function Breadcrumbs({ className = '' }) {
             <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
             {isLast ? (
               <span
-                className="px-2 py-1 text-purple-300 font-medium truncate max-w-[200px]"
+                className="px-2 py-1 text-emerald-300 font-medium truncate max-w-[200px]"
                 style={{ fontFamily: "'Neuzeit Grotesk', sans-serif" }}
                 title={entry.label}
               >
@@ -31,7 +31,7 @@ export function Breadcrumbs({ className = '' }) {
             ) : (
               <button
                 onClick={() => navigateToBreadcrumb(index)}
-                className="px-2 py-1 rounded-md text-gray-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors truncate max-w-[150px]"
+                className="px-2 py-1 rounded-md text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-colors truncate max-w-[150px]"
                 style={{ fontFamily: "'Neuzeit Grotesk', sans-serif" }}
                 title={entry.label}
               >
@@ -58,7 +58,7 @@ export function BreadcrumbsCompact({ className = '' }) {
         <>
           <button
             onClick={() => navigateToBreadcrumb(0)}
-            className="px-2 py-1 rounded-md text-gray-500 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
+            className="px-2 py-1 rounded-md text-gray-500 hover:text-emerald-300 hover:bg-emerald-500/10 transition-colors"
             title="Go to beginning"
           >
             ...
@@ -75,7 +75,7 @@ export function BreadcrumbsCompact({ className = '' }) {
             {localIndex > 0 && <ChevronRight className="w-4 h-4 text-gray-600" />}
             {isLast ? (
               <span
-                className="px-2 py-1 text-purple-300 font-medium truncate max-w-[150px]"
+                className="px-2 py-1 text-emerald-300 font-medium truncate max-w-[150px]"
                 style={{ fontFamily: "'Neuzeit Grotesk', sans-serif" }}
                 title={entry.label}
               >
@@ -84,7 +84,7 @@ export function BreadcrumbsCompact({ className = '' }) {
             ) : (
               <button
                 onClick={() => navigateToBreadcrumb(actualIndex)}
-                className="px-2 py-1 rounded-md text-gray-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors truncate max-w-[120px]"
+                className="px-2 py-1 rounded-md text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-colors truncate max-w-[120px]"
                 style={{ fontFamily: "'Neuzeit Grotesk', sans-serif" }}
                 title={entry.label}
               >

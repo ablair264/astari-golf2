@@ -121,16 +121,16 @@ export function RulesPanel({ onClose }) {
   const totalAffected = rules.reduce((sum, r) => sum + (Number(r.affected_count) || 0), 0)
 
   return (
-    <div className="h-full flex flex-col rounded-xl border border-white/10 bg-[#0f1621] text-white shadow-2xl overflow-hidden">
+    <div className="h-full flex flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur text-white overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
         <div>
-          <h3 className="text-lg font-semibold">Rules & Offers</h3>
+          <h3 className="text-lg font-semibold admin-heading">Rules & Offers</h3>
           <p className="text-xs text-white/50 mt-0.5">
             {rules.length} rules · {totalAffected} products affected
           </p>
         </div>
-        <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 text-white/60 hover:text-white" aria-label="Close">
+        <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -140,7 +140,7 @@ export function RulesPanel({ onClose }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowCreate(true)}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-500/10 text-purple-100 py-2.5 hover:border-purple-400 hover:bg-purple-500/15 text-sm font-medium transition-all"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-100 py-2.5 hover:border-emerald-400 hover:bg-emerald-500/20 text-sm font-medium transition-all"
           >
             <Plus className="w-4 h-4" /> New Rule
           </button>
@@ -154,7 +154,7 @@ export function RulesPanel({ onClose }) {
         <button
           onClick={handleApplyAll}
           disabled={applyingAll || rules.length === 0}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-200 py-2.5 hover:bg-emerald-600/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-all"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 text-white/70 py-2.5 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-all"
         >
           {applyingAll ? (
             <>

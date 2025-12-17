@@ -203,7 +203,7 @@ const CartItemCard = ({ item, onRemove, onIncrement, onDecrement }) => {
         {/* Price and Quantity */}
         <div className="flex items-center justify-between mt-2">
           <span className="font-semibold text-white">
-            {cartUtils.formatPrice(item.price)}
+            {cartUtils.formatPrice(item.final_price ?? item.calculated_price ?? item.price)}
           </span>
 
           {/* Quantity Controls */}

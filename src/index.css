@@ -29,6 +29,15 @@
   font-display: swap;
 }
 
+/* Admin Typography */
+.admin-heading {
+  font-family: 'Gravesend Sans', sans-serif;
+}
+
+.admin-body {
+  font-family: 'Noto Sans', system-ui, sans-serif;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

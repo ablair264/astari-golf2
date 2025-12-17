@@ -4,8 +4,11 @@ import { query } from '@/lib/neonClient'
 export const getAllProducts = async (filters = {}) => {
   try {
     let sql = `
-      SELECT 
-        p.*, 
+      SELECT
+        p.*,
+        p.final_price,
+        p.calculated_price,
+        p.margin_percentage,
         c.name as category_name, c.slug as category_slug,
         b.name as brand_name, b.slug as brand_slug, b.logo_url as brand_logo, b.metadata as brand_metadata
       FROM products p
@@ -57,8 +60,11 @@ export const getProductsByBrand = async (brand) => {
   // Note: Current schema doesn't have brand field, using metadata instead
   try {
     const products = await query(`
-      SELECT 
-        p.*, 
+      SELECT
+        p.*,
+        p.final_price,
+        p.calculated_price,
+        p.margin_percentage,
         c.name as category_name, c.slug as category_slug,
         b.name as brand_name, b.slug as brand_slug, b.logo_url as brand_logo, b.metadata as brand_metadata
       FROM products p
@@ -83,8 +89,11 @@ export const getProductsByBrand = async (brand) => {
 export const getProductsByCategory = async (category) => {
   try {
     const products = await query(`
-      SELECT 
-        p.*, 
+      SELECT
+        p.*,
+        p.final_price,
+        p.calculated_price,
+        p.margin_percentage,
         c.name as category_name, c.slug as category_slug,
         b.name as brand_name, b.slug as brand_slug, b.logo_url as brand_logo, b.metadata as brand_metadata
       FROM products p
@@ -104,8 +113,11 @@ export const getProductsByCategory = async (category) => {
 export const getProduct = async (id) => {
   try {
     const products = await query(`
-      SELECT 
-        p.*, 
+      SELECT
+        p.*,
+        p.final_price,
+        p.calculated_price,
+        p.margin_percentage,
         c.name as category_name, c.slug as category_slug,
         b.name as brand_name, b.slug as brand_slug, b.logo_url as brand_logo, b.metadata as brand_metadata
       FROM products p
@@ -125,8 +137,11 @@ export const getProduct = async (id) => {
 export const getProductBySlug = async (slug) => {
   try {
     const products = await query(`
-      SELECT 
-        p.*, 
+      SELECT
+        p.*,
+        p.final_price,
+        p.calculated_price,
+        p.margin_percentage,
         c.name as category_name, c.slug as category_slug,
         b.name as brand_name, b.slug as brand_slug, b.logo_url as brand_logo, b.metadata as brand_metadata
       FROM products p
@@ -207,45 +222,61 @@ export const createProduct = async (productData) => {
   }
 }
 
-// Update product
+// Update product - supports partial updates (only updates provided fields)
 export const updateProduct = async (id, productData) => {
   try {
-    const result = await query(`
+    // Build dynamic SET clause for only provided fields
+    const setClauses = []
+    const values = []
+    let paramIndex = 1
+
+    const addField = (column, value) => {
+      if (value !== undefined) {
+        setClauses.push(`${column} = $${paramIndex}`)
+        values.push(value)
+        paramIndex++
+      }
+    }
+
+    // Add each field if provided
+    addField('name', productData.name)
+    addField('description', productData.description)
+    addField('price', productData.price)
+    addField('category_id', productData.category_id)
+    addField('image_url', productData.image_url)
+    if (productData.images !== undefined) {
+      setClauses.push(`images = $${paramIndex}`)
+      values.push(JSON.stringify(productData.images || []))
+      paramIndex++
+    }
+    addField('stock_quantity', productData.stock_quantity)
+    if (productData.metadata !== undefined) {
+      setClauses.push(`metadata = $${paramIndex}`)
+      values.push(JSON.stringify(productData.metadata || {}))
+      paramIndex++
+    }
+    if (productData.is_active !== undefined) {
+      addField('is_active', productData.is_active)
+    }
+    addField('brand_id', productData.brand_id)
+    addField('sku', productData.sku)
+    addField('style_no', productData.style_no)
+    addField('colour_name', productData.colour_name)
+    addField('colour_hex', productData.colour_hex)
+
+    if (setClauses.length === 0) {
+      throw new Error('No fields to update')
+    }
+
+    values.push(id)
+    const sql = `
       UPDATE products
-      SET
-        name = $1,
-        description = $2,
-        price = $3,
-        category_id = $4,
-        image_url = $5,
-        images = $6,
-        stock_quantity = $7,
-        metadata = $8,
-        is_active = $9,
-        brand_id = $10,
-        sku = $11,
-        style_no = $12,
-        colour_name = $13,
-        colour_hex = $14
-      WHERE id = $15
+      SET ${setClauses.join(', ')}
+      WHERE id = $${paramIndex}
       RETURNING *
-    `, [
-      productData.name,
-      productData.description,
-      productData.price,
-      productData.category_id,
-      productData.image_url,
-      JSON.stringify(productData.images || []),
-      productData.stock_quantity,
-      JSON.stringify(productData.metadata || {}),
-      productData.is_active !== undefined ? productData.is_active : true,
-      productData.brand_id || null,
-      productData.sku || null,
-      productData.style_no || null,
-      productData.colour_name || null,
-      productData.colour_hex || null,
-      id,
-    ])
+    `
+
+    const result = await query(sql, values)
     return result[0]
   } catch (error) {
     console.error('Error updating product:', error)
@@ -264,8 +295,22 @@ export const deleteProduct = async (id) => {
 }
 
 
+// Apply brand margins - now prefers database-calculated final_price if available
 const applyBrandMargins = (products) => {
   return products.map(p => {
+    // If database already has final_price set, use it directly
+    if (p.final_price !== null && p.final_price !== undefined) {
+      return {
+        ...p,
+        price_with_margin: parseFloat(p.final_price),
+        // Use database final_price for min/max if available
+        price_min: p.final_price_min ?? p.price_min ?? parseFloat(p.final_price),
+        price_max: p.final_price_max ?? p.price_max ?? parseFloat(p.final_price),
+        margin_applied: p.margin_percentage ?? null,
+      }
+    }
+
+    // Fallback: apply brand margin rules from metadata (legacy support)
     const rules = p.brand_metadata?.margin_rules || []
     const margin = rules[0]?.value
     if (margin !== undefined && margin !== null) {

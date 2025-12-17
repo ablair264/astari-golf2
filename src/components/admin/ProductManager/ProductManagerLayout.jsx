@@ -13,15 +13,15 @@ import { StylesView } from './views/StylesView'
 import { VariantsView } from './views/VariantsView'
 import { AllProductsView } from './views/AllProductsView'
 
-// ASTARI theme
+// ASTARI theme - matching ProductBrowser
 const colors = {
-  bgDark: '#0d121a',
-  bgCard: 'rgba(17, 24, 39, 0.8)',
-  bgCardHover: 'rgba(24, 32, 44, 0.9)',
-  bgInput: 'rgba(255, 255, 255, 0.04)',
-  accent: '#78BE20',
-  borderLight: 'rgba(255, 255, 255, 0.08)',
-  borderMedium: 'rgba(255, 255, 255, 0.12)',
+  bgDark: '#0b1017',
+  bgCard: 'rgba(255, 255, 255, 0.05)',
+  bgCardHover: 'rgba(255, 255, 255, 0.08)',
+  bgInput: 'rgba(255, 255, 255, 0.05)',
+  accent: '#10b981', // emerald-500
+  borderLight: 'rgba(255, 255, 255, 0.10)',
+  borderMedium: 'rgba(255, 255, 255, 0.15)',
 }
 
 function ProductManagerContent() {
@@ -58,7 +58,7 @@ function ProductManagerContent() {
   const canGoBack = breadcrumbs.length > 1
 
   return (
-    <div className="flex h-[calc(100vh-140px)] gap-4 text-white overflow-hidden" style={{ fontFamily: 'Gravesend Sans, sans-serif' }}>
+    <div className="flex h-[calc(100vh-140px)] gap-4 text-white overflow-hidden admin-body">
       {/* Left Panel - Rules & Filters */}
       <div
         className={`transition-all duration-300 flex-shrink-0 ${

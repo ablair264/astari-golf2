@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { Building2, Loader2, Percent, Tag } from 'lucide-react'
+import { Building2, Loader2, Percent, Tag, ChevronRight } from 'lucide-react'
 import { useDrillDown } from '../DrillDownContext'
 
 const API = '/.netlify/functions/products-admin/brands'
@@ -53,43 +53,64 @@ export function BrandsView() {
   }, [cursor, hasMore, loadingMore, loading, fetchBrands])
 
   if (loading && data.length === 0) {
-    return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-purple-400 animate-spin" /></div>
+    return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-emerald-400 animate-spin" /></div>
   }
 
   return (
-    <div className="p-4 space-y-3 h-full overflow-auto">
-      {error && <div className="text-sm text-red-300">{error}</div>}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {data.map((brand) => (
-          <button
-            key={brand.brand}
-            onClick={() => navigateTo('product-types', { brand: brand.brand }, brand.brand)}
-            className="text-left rounded-xl border border-white/10 bg-white/5 p-4 hover:border-purple-400/40 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <span className="p-2 rounded-lg bg-purple-500/20">
-                <Building2 className="w-5 h-5 text-purple-300" />
-              </span>
-              <div>
-                <div className="text-white font-semibold">{brand.brand}</div>
-                <div className="text-xs text-white/60">{brand.variant_count} variants · {brand.style_count} styles</div>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-3 text-xs text-white/70">
-              <div className="flex items-center gap-1">
-                <Percent className="w-3 h-3 text-purple-300" />
-                <span>{(brand.avg_margin ?? 0).toFixed(1)}%</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Tag className="w-3 h-3 text-emerald-300" />
-                <span>{brand.special_offer_count || 0} offers</span>
-              </div>
-            </div>
-            <div className="text-sm text-white/80 mt-2">
-              £{(parseFloat(brand.avg_final_price ?? brand.avg_cost ?? '0') || 0).toFixed(2)} avg price
-            </div>
-          </button>
-        ))}
+    <div className="p-4 h-full overflow-auto">
+      {error && <div className="text-sm text-red-300 mb-3">{error}</div>}
+      <div className="rounded-xl border border-white/10 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-white/5 border-b border-white/10">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Brand</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Variants</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Styles</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Margin</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Offers</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Avg Price</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-20"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((brand) => (
+              <tr
+                key={brand.brand}
+                onClick={() => navigateTo('product-types', { brand: brand.brand }, brand.brand)}
+                className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
+              >
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-emerald-500/20">
+                      <Building2 className="w-4 h-4 text-emerald-300" />
+                    </span>
+                    <span className="text-white font-medium">{brand.brand}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right text-white/80">{brand.variant_count}</td>
+                <td className="px-4 py-3 text-right text-white/80">{brand.style_count}</td>
+                <td className="px-4 py-3 text-right">
+                  <span className="inline-flex items-center gap-1 text-emerald-300">
+                    <Percent className="w-3 h-3" />
+                    {parseFloat(brand.avg_margin ?? 0).toFixed(1)}%
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <span className="inline-flex items-center gap-1 text-emerald-300">
+                    <Tag className="w-3 h-3" />
+                    {brand.special_offer_count || 0}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right text-white/80">
+                  £{(parseFloat(brand.avg_final_price ?? brand.avg_cost ?? '0') || 0).toFixed(2)}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors ml-auto" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {hasMore && (
         <div ref={loadMoreRef} className="py-6 text-center text-white/60 text-sm">

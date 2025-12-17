@@ -49,8 +49,8 @@ export function BulkActionBar({ onRefresh }) {
         <div className="flex items-center gap-2 bg-[#111827]/95 border border-white/10 rounded-2xl px-4 py-2.5 shadow-2xl backdrop-blur-lg">
           {/* Selection Count */}
           <div className="flex items-center gap-2 pr-3 border-r border-white/10">
-            <div className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center">
-              <span className="text-xs font-bold text-purple-300">{selectedSkus.length}</span>
+            <div className="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <span className="text-xs font-bold text-emerald-300">{selectedSkus.length}</span>
             </div>
             <span className="text-sm text-white/70">selected</span>
           </div>
@@ -59,7 +59,7 @@ export function BulkActionBar({ onRefresh }) {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowApplyRule(true)}
-              className="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-purple-500/20 flex items-center gap-2 text-sm font-medium transition-all"
+              className="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-emerald-500/20 flex items-center gap-2 text-sm font-medium transition-all"
             >
               <Percent className="w-4 h-4" />
               <span className="hidden sm:inline">Apply Margin</span>

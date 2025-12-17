@@ -86,7 +86,7 @@ export function AllProductsView() {
   }, [cursor, hasMore, loadingMore, loading, fetchProducts])
 
   if (loading && data.length === 0) {
-    return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-purple-400 animate-spin" /></div>
+    return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-emerald-400 animate-spin" /></div>
   }
 
   const handleEdit = (product) => {

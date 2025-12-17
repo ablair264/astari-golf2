@@ -5,7 +5,7 @@ const RULE_TYPE_CONFIG = {
   sku: { icon: Tag, color: 'emerald', label: 'SKU', priority: 1 },
   style: { icon: Layers, color: 'blue', label: 'Style', priority: 2 },
   category: { icon: FolderTree, color: 'amber', label: 'Category', priority: 3 },
-  brand: { icon: Building2, color: 'purple', label: 'Brand', priority: 4 },
+  brand: { icon: Building2, color: 'teal', label: 'Brand', priority: 4 },
   default: { icon: Percent, color: 'gray', label: 'Default', priority: 5 },
 }
 
@@ -24,7 +24,7 @@ export function RuleCard({
     emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-300', icon: 'text-emerald-400' },
     blue: { bg: 'bg-blue-500/15', border: 'border-blue-500/30', text: 'text-blue-300', icon: 'text-blue-400' },
     amber: { bg: 'bg-amber-500/15', border: 'border-amber-500/30', text: 'text-amber-300', icon: 'text-amber-400' },
-    purple: { bg: 'bg-purple-500/15', border: 'border-purple-500/30', text: 'text-purple-300', icon: 'text-purple-400' },
+    teal: { bg: 'bg-teal-500/15', border: 'border-teal-500/30', text: 'text-teal-300', icon: 'text-teal-400' },
     gray: { bg: 'bg-white/10', border: 'border-white/20', text: 'text-white/70', icon: 'text-white/50' },
   }[config.color]
 

@@ -23,15 +23,15 @@ export function ViewSwitcher({ className = '' }) {
             onClick={() => setViewMode(mode.id)}
             className={`group flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 ${
               isActive
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50 shadow-lg shadow-purple-500/10'
-                : 'bg-[#2a2440] text-gray-400 border border-transparent hover:bg-[#3d3456] hover:text-gray-200 hover:border-purple-500/20'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-lg shadow-emerald-500/10'
+                : 'bg-[#2a2440] text-gray-400 border border-transparent hover:bg-[#3d3456] hover:text-gray-200 hover:border-emerald-500/20'
             }`}
             style={{ fontFamily: "'Neuzeit Grotesk', sans-serif" }}
             title={mode.description}
           >
             <Icon
               className={`w-4 h-4 transition-colors ${
-                isActive ? 'text-purple-400' : 'text-gray-500 group-hover:text-purple-400'
+                isActive ? 'text-emerald-400' : 'text-gray-500 group-hover:text-emerald-400'
               }`}
             />
             <span className="text-sm font-medium">{mode.label}</span>
@@ -45,7 +45,7 @@ export function ViewSwitcher({ className = '' }) {
 export function ViewSwitcherCompact({ className = '' }) {
   const { viewMode, setViewMode } = useDrillDown()
   return (
-    <div className={`inline-flex rounded-lg border border-purple-500/20 overflow-hidden ${className}`} style={{ background: '#2a2440' }}>
+    <div className={`inline-flex rounded-lg border border-emerald-500/20 overflow-hidden ${className}`} style={{ background: '#2a2440' }}>
       {viewModes.map((mode, index) => {
         const Icon = mode.icon
         const isActive = viewMode === mode.id
@@ -53,8 +53,8 @@ export function ViewSwitcherCompact({ className = '' }) {
           <button
             key={mode.id}
             onClick={() => setViewMode(mode.id)}
-            className={`p-2.5 transition-all duration-200 ${index > 0 ? 'border-l border-purple-500/20' : ''} ${
-              isActive ? 'bg-purple-500/30 text-purple-300' : 'text-gray-500 hover:text-purple-300 hover:bg-purple-500/10'
+            className={`p-2.5 transition-all duration-200 ${index > 0 ? 'border-l border-emerald-500/20' : ''} ${
+              isActive ? 'bg-emerald-500/30 text-emerald-300' : 'text-gray-500 hover:text-emerald-300 hover:bg-emerald-500/10'
             }`}
             title={`${mode.label}: ${mode.description}`}
           >

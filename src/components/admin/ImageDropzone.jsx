@@ -1,6 +1,6 @@
 import { useCallback, useState, useRef } from 'react'
 import { UploadCloud, X, Loader2, Image as ImageIcon, GripVertical } from 'lucide-react'
-import { getSignedUploadUrl, uploadFileToSignedUrl } from '@/services/uploads'
+import { uploadFile } from '@/services/uploads'
 
 export function ImageDropzone({
   images = [],
@@ -34,19 +34,17 @@ export function ImageDropzone({
     for (let i = 0; i < toUpload.length; i++) {
       const file = toUpload[i]
       const fileId = `${Date.now()}-${i}`
-      setUploadProgress(prev => ({ ...prev, [fileId]: { name: file.name, progress: 0 } }))
+      setUploadProgress(prev => ({ ...prev, [fileId]: { name: file.name, progress: 30 } }))
 
       try {
-        const { uploadUrl, publicUrl } = await getSignedUploadUrl(brand, file.name)
-        setUploadProgress(prev => ({ ...prev, [fileId]: { ...prev[fileId], progress: 50 } }))
-
-        await uploadFileToSignedUrl(uploadUrl, file)
+        // Upload file via Netlify proxy to R2
+        const { publicUrl } = await uploadFile(file, brand)
         setUploadProgress(prev => ({ ...prev, [fileId]: { ...prev[fileId], progress: 100 } }))
 
         newUrls.push(publicUrl)
       } catch (err) {
         console.error('Upload failed:', err)
-        setError(`Failed to upload ${file.name}`)
+        setError(`Failed to upload ${file.name}: ${err.message}`)
         setUploadProgress(prev => {
           const copy = { ...prev }
           delete copy[fileId]

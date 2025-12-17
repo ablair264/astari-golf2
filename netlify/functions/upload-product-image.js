@@ -8,62 +8,98 @@ const {
   R2_ACCOUNT_ID = '',
 } = process.env
 
-// Cloudflare R2 uses S3-compatible pre-signed URLs. This creates a v4 signature for PUT.
-
+// Helper functions for AWS v4 signing
 function hmac(key, string) {
   return crypto.createHmac('sha256', key).update(string).digest()
 }
 
-function hash(string) {
-  return crypto.createHash('sha256').update(string).digest('hex')
+function hash(data) {
+  return crypto.createHash('sha256').update(data).digest('hex')
 }
 
-export default async function handler(event) {
+const headers = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+export async function handler(event) {
+  // Handle CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers }
+  }
+
   if (!R2_ACCESS_KEY || !R2_SECRET || !R2_PUBLIC_BASE || !R2_ACCOUNT_ID) {
-    return new Response(JSON.stringify({ error: 'R2 env vars not set' }), { status: 500 })
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'R2 env vars not set' })
+    }
   }
 
   if (event.httpMethod !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: 'Method not allowed' })
+    }
   }
 
   try {
-    const { brand = 'astari', filename } = JSON.parse(event.body || '{}')
-    if (!filename) {
-      return new Response(JSON.stringify({ error: 'filename required' }), { status: 400 })
+    const body = JSON.parse(event.body || '{}')
+    const { brand = 'astari', filename, fileData, contentType = 'application/octet-stream' } = body
+
+    if (!filename || !fileData) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'filename and fileData required' })
+      }
     }
 
-    const method = 'PUT'
+    // Decode base64 file data
+    const fileBuffer = Buffer.from(fileData, 'base64')
+    const contentLength = fileBuffer.length
+
+    // R2 endpoint
     const region = 'auto'
+    const service = 's3'
     const host = `${R2_BUCKET}.${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
     const key = `product-images/${brand}/${filename}`
     const endpoint = `https://${host}/${key}`
 
+    // Create timestamp
     const now = new Date()
-    const amzDate = now.toISOString().replace(/[:-]|\..*/g, '') + 'Z'
+    const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
     const dateStamp = amzDate.slice(0, 8)
-    const credentialScope = `${dateStamp}/${region}/s3/aws4_request`
 
-    const headers = {
-      host,
-      'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-      'x-amz-date': amzDate,
-    }
+    // Calculate content hash
+    const payloadHash = hash(fileBuffer)
 
-    // Canonical request
-    const signedHeaders = 'host;x-amz-content-sha256;x-amz-date'
-    const canonicalHeaders = `host:${host}\n` +
-      `x-amz-content-sha256:UNSIGNED-PAYLOAD\n` +
+    // Create canonical request
+    const method = 'PUT'
+    const canonicalUri = `/${key}`
+    const canonicalQueryString = ''
+    const signedHeaders = 'content-length;content-type;host;x-amz-content-sha256;x-amz-date'
+    const canonicalHeaders =
+      `content-length:${contentLength}\n` +
+      `content-type:${contentType}\n` +
+      `host:${host}\n` +
+      `x-amz-content-sha256:${payloadHash}\n` +
       `x-amz-date:${amzDate}\n`
+
     const canonicalRequest = [
       method,
-      `/${key}`,
-      '',
+      canonicalUri,
+      canonicalQueryString,
       canonicalHeaders,
       signedHeaders,
-      'UNSIGNED-PAYLOAD'
+      payloadHash
     ].join('\n')
 
+    // Create string to sign
+    const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
     const stringToSign = [
       'AWS4-HMAC-SHA256',
       amzDate,
@@ -71,30 +107,52 @@ export default async function handler(event) {
       hash(canonicalRequest)
     ].join('\n')
 
+    // Calculate signature
     const kDate = hmac('AWS4' + R2_SECRET, dateStamp)
     const kRegion = hmac(kDate, region)
-    const kService = hmac(kRegion, 's3')
+    const kService = hmac(kRegion, service)
     const kSigning = hmac(kService, 'aws4_request')
     const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex')
 
-    const params = new URLSearchParams({
-      'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-      'X-Amz-Credential': `${R2_ACCESS_KEY}/${credentialScope}`,
-      'X-Amz-Date': amzDate,
-      'X-Amz-Expires': '900',
-      'X-Amz-SignedHeaders': signedHeaders,
-      'X-Amz-Signature': signature,
+    // Create authorization header
+    const authorization = `AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+
+    // Upload to R2
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': String(contentLength),
+        'x-amz-content-sha256': payloadHash,
+        'x-amz-date': amzDate,
+        'Authorization': authorization,
+      },
+      body: fileBuffer,
     })
 
-    const uploadUrl = `${endpoint}?${params.toString()}`
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('R2 upload failed:', response.status, errorText)
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'R2 upload failed', details: errorText })
+      }
+    }
+
     const publicUrl = `${R2_PUBLIC_BASE.replace(/\/$/, '')}/product-images/${brand}/${filename}`
 
-    return new Response(
-      JSON.stringify({ uploadUrl, publicUrl }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    )
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, publicUrl })
+    }
   } catch (err) {
-    console.error('Upload sign error', err)
-    return new Response(JSON.stringify({ error: 'Failed to sign upload URL' }), { status: 500 })
+    console.error('Upload error', err)
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Upload failed', details: err.message })
+    }
   }
 }

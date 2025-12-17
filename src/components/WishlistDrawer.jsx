@@ -176,7 +176,7 @@ const WishlistItemCard = ({ item, onRemove, onAddToCart, onView }) => {
             {item.brand} • {item.category}
           </p>
           <p className="text-lg font-bold text-white">
-            £{item.price}
+            £{item.final_price ?? item.calculated_price ?? item.price}
           </p>
         </div>
 
@@ -230,7 +230,7 @@ const SimilarProductCard = ({ product, onView }) => {
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <p className="text-xs text-gray-200 mb-1 truncate">{product.brand}</p>
         <p className="text-sm font-semibold text-white truncate mb-1">{product.name}</p>
-        <p className="text-base font-bold text-white">£{product.price}</p>
+        <p className="text-base font-bold text-white">£{product.final_price ?? product.calculated_price ?? product.price}</p>
       </div>
 
       {/* Plus icon overlay on hover */}

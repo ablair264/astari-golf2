@@ -60,7 +60,7 @@ const ProductModal = ({ open, onClose, product, images, colors, onAddToCart }) =
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [liked, setLiked] = useState(false)
-  const price = parseFloat(product.price ?? product.price_min ?? 0)
+  const price = parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? product.price_min ?? 0)
   if (!open) return null
 
   return (
@@ -193,7 +193,7 @@ const ProductCard = ({ product, onAddToCart, onClick }) => {
 
   const color = colorOptions[selectedColorIndex] || null
   const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5
-  const price = parseFloat(product.price ?? product.price_min ?? 0)
+  const price = parseFloat(product.final_price ?? product.calculated_price ?? product.price ?? product.price_min ?? 0)
 
   const nextImage = (e) => {
     e.stopPropagation()
